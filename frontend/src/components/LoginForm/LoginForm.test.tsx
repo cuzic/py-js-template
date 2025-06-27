@@ -70,7 +70,6 @@ describe('LoginForm - User Authentication Behavior', () => {
     });
   });
 
-
   describe('when user enters a short password', () => {
     it('should show password validation error', async () => {
       // Given: A user on the login page
