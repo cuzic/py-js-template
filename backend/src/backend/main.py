@@ -1,12 +1,10 @@
 def hello_world():
-    message = "Hello, World!"
-    return message
+    return "Hello, World!"
 
 
 def calculate_sum(a: int, b: int) -> int:
     """Calculate the sum of two numbers."""
-    result = a + b
-    return result
+    return a + b
 
 
 if __name__ == "__main__":

@@ -7,6 +7,9 @@ def test_hello_world():
 
 
 def test_calculate_sum():
-    assert calculate_sum(2, 3) == 5
+    # Test basic addition
+    assert calculate_sum(2, 3) == 5  # noqa: PLR2004
+    # Test with negative numbers
     assert calculate_sum(-1, 1) == 0
+    # Test with zeros
     assert calculate_sum(0, 0) == 0
