@@ -41,25 +41,23 @@ jobs:
       # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
       
       - name: Install dependencies
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+        run: uv sync --all-extras
       
-      # 検証のみ - 修正は行わない
+      # 検証のみ - 修正は行わない (mise統一ツール使用)
       - name: Check formatting with Ruff
-        run: uv run ruff format --check --diff .
+        run: mise exec -- ruff format --check --diff .
       
       - name: Check linting with Ruff
-        run: uv run ruff check .
+        run: mise exec -- ruff check .
       
       - name: Type check with MyPy
-        run: uv run mypy src
+        run: mise exec -- mypy src
       
       - name: Security check with Bandit
-        run: uv run bandit -r src/
+        run: mise exec -- bandit -r src/
       
       - name: Run tests with pytest
-        run: uv run pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
+        run: mise exec -- pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
       
       - name: Upload coverage reports to Codecov
         if: github.event_name == 'pull_request'
@@ -106,10 +104,8 @@ jobs:
       
       - name: Install dependencies
         working-directory: backend
-        run: |
-          uv venv
-          uv pip install -e ".[dev]"
+        run: uv sync --all-extras
       
       - name: Run tests
         working-directory: backend
-        run: uv run pytest -v
+        run: mise exec -- pytest -v
