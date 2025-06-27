@@ -1,4 +1,3 @@
-
 from backend.main import calculate_sum, hello_world
 
 
