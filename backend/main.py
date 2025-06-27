@@ -1,6 +1,5 @@
 def hello_world():
     message = "Hello, World!"
-    print(message)
     return message
 
 
@@ -11,5 +10,8 @@ def calculate_sum(a: int, b: int) -> int:
 
 
 if __name__ == "__main__":
-    hello_world()
-    print(f"2 + 3 = {calculate_sum(2, 3)}")
+    message = hello_world()
+    result = calculate_sum(2, 3)
+    # Print statements are used for demonstration purposes
+    print(message)  # noqa: T201
+    print(f"2 + 3 = {result}")  # noqa: T201
