@@ -1,0 +1,14 @@
+dist
+node_modules
+coverage
+*.min.js
+*.d.ts
+public
+build
+.next
+.nuxt
+.cache
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
