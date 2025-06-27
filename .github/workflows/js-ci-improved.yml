@@ -41,15 +41,15 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
       
-      # 検証のみ - 修正は行わない (mise統一ツール使用)
+      # 検証のみ - 修正は行わない (bun run経由でプロジェクト依存関係使用)
       - name: Check formatting with Prettier
-        run: mise exec -- prettier --check .
+        run: bun run format:check
       
       - name: Check linting with ESLint
-        run: mise exec -- eslint . --max-warnings 0
+        run: bun run lint --max-warnings 0
       
       - name: Type check with TypeScript
-        run: mise exec -- tsc --noEmit
+        run: bun run typecheck
       
       - name: Check accessibility rules
         run: bun run security:check
@@ -120,7 +120,7 @@ jobs:
       
       - name: Type check
         working-directory: frontend
-        run: mise exec -- tsc --noEmit
+        run: bun run typecheck
       
       - name: Build check
         working-directory: frontend

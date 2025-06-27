@@ -43,21 +43,21 @@ jobs:
       - name: Install dependencies
         run: uv sync --all-extras
       
-      # 検証のみ - 修正は行わない (mise統一ツール使用)
+      # 検証のみ - 修正は行わない (uv run経由でpipx管理ツール使用)
       - name: Check formatting with Ruff
-        run: mise exec -- ruff format --check --diff .
+        run: uv run ruff format --check --diff .
       
       - name: Check linting with Ruff
-        run: mise exec -- ruff check .
+        run: uv run ruff check .
       
       - name: Type check with MyPy
-        run: mise exec -- mypy src
+        run: uv run mypy src
       
       - name: Security check with Bandit
-        run: mise exec -- bandit -r src/
+        run: uv run bandit -r src/
       
       - name: Run tests with pytest
-        run: mise exec -- pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
+        run: uv run pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
       
       - name: Upload coverage reports to Codecov
         if: github.event_name == 'pull_request'
@@ -108,4 +108,4 @@ jobs:
       
       - name: Run tests
         working-directory: backend
-        run: mise exec -- pytest -v
+        run: uv run pytest -v
