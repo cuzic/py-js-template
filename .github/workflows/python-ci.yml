@@ -45,10 +45,10 @@ jobs:
           source .venv/bin/activate
           uv pip install -e ".[dev]"
       
-      - name: Auto-format with Black
+      - name: Auto-format with Ruff
         run: |
           source .venv/bin/activate
-          black .
+          ruff format .
       
       - name: Auto-fix with Ruff
         run: |
@@ -59,15 +59,15 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: 'style: auto-format Python code with Black and Ruff'
+          commit_message: 'style: auto-format Python code with Ruff'
           commit_user_name: 'github-actions[bot]'
           commit_user_email: 'github-actions[bot]@users.noreply.github.com'
           file_pattern: 'backend/**/*.py'
       
-      - name: Final lint check
+      - name: Final lint and format check
         run: |
           source .venv/bin/activate
-          black --check .
+          ruff format --check .
           ruff check .
       
       - name: Run tests with pytest

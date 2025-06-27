@@ -1,0 +1,142 @@
+name: JavaScript CI (Improved)
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/js-ci-improved.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/js-ci-improved.yml'
+
+defaults:
+  run:
+    working-directory: frontend
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    # 最小権限の原則: 読み取り専用権限のみ
+    permissions:
+      contents: read
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
+      # 依存関係キャッシュ
+      - name: Cache bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+      
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+      
+      # 検証のみ - 修正は行わない
+      - name: Check formatting with Prettier
+        run: bun run format:check
+      
+      - name: Check linting with ESLint
+        run: bun run lint --max-warnings 0
+      
+      - name: Type check with TypeScript
+        run: bun run typecheck
+      
+      - name: Check accessibility rules
+        run: bun run security:check
+      
+      - name: Run tests
+        run: bun run test --run
+      
+      - name: Run tests with coverage
+        run: bun run test:coverage
+      
+      - name: Run accessibility tests
+        run: bun run test:a11y
+      
+      - name: Build check
+        run: bun run build
+      
+      - name: Upload coverage reports to Codecov
+        if: github.event_name == 'pull_request'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./frontend/coverage/lcov.info
+          flags: frontend
+          name: codecov-frontend
+          fail_ci_if_error: false
+      
+      - name: Upload coverage reports (artifact)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: js-coverage-report
+          path: |
+            frontend/coverage/
+      
+      - name: Upload build artifacts
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-artifacts
+          path: frontend/dist/
+
+  # Node.js バージョンマトリックステスト（将来の互換性確保）
+  compatibility-check:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        node-version: ['18', '20', '21']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-node${{ matrix.node-version }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-node${{ matrix.node-version }}-bun-
+      
+      - name: Install dependencies
+        working-directory: frontend
+        run: bun install --frozen-lockfile
+      
+      - name: Type check
+        working-directory: frontend
+        run: bun run typecheck
+      
+      - name: Build check
+        working-directory: frontend
+        run: bun run build
+      
+      - name: Run tests
+        working-directory: frontend
+        run: bun run test --run

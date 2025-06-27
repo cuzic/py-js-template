@@ -1,6 +1,79 @@
+# Bun Configuration (2025 Best Practices)
+
+[install]
+# Package manager settings
+cache = true
+optional = true
+dev = true
+peer = true
+production = false
+
+# Registry settings
+registry = "https://registry.npmjs.org"
+
+# Lockfile settings
+lockfile = true
+exact = false
+
+[install.scopes]
+# Scoped package configuration
+# "@company" = "https://npm.company.com"
+
+[run]
+# Runtime settings
+shell = ["bash", "-c"]
+silent = false
+
 [test]
+# Test configuration
 preload = ["./tests/setup.ts"]
+timeout = 30000
 
 [test.coverage]
 enabled = true
 reporter = ["text", "json", "html"]
+threshold = 80
+
+[build]
+# Build settings
+minify = true
+target = "browser"
+format = "esm"
+splitting = true
+outdir = "./dist"
+
+[dev]
+# Development settings
+hot = true
+port = 3000
+hostname = "localhost"
+
+# Performance optimizations
+[performance]
+# Memory and CPU optimization
+heap_size = "2gb"
+max_old_space_size = 4096
+
+# 2025: Enhanced debugging and profiling
+[debug]
+# Debugging options for development
+sourcemap = true
+verbose = false
+
+# Package resolution settings
+[resolve]
+# Module resolution
+extensions = [".tsx", ".ts", ".jsx", ".js", ".json"]
+alias = {
+  "@" = "./src",
+  "@components" = "./src/components", 
+  "@hooks" = "./src/hooks",
+  "@utils" = "./src/utils",
+  "@types" = "./src/types"
+}
+
+# Environment variables
+[env]
+# Development environment variables
+NODE_ENV = "development"
+VITE_APP_NAME = "Frontend App"

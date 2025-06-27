@@ -7,7 +7,7 @@
 - **パッケージマネージャー**: [uv](https://github.com/astral-sh/uv) - 超高速Pythonパッケージマネージャー
 - **ビルドシステム**: [Hatchling](https://hatch.pypa.io/) - モダンなPythonビルドバックエンド
 - **リンター**: [Ruff](https://github.com/astral-sh/ruff) - Rust製超高速リンター
-- **フォーマッター**: [Black](https://github.com/psf/black) - 妥協のないコードフォーマッター
+- **リンター/フォーマッター**: [Ruff](https://github.com/astral-sh/ruff) - 統合リンター・フォーマッター（2025年版）
 - **型チェッカー**: [Mypy](http://mypy-lang.org/) - 静的型チェッカー
 - **テストフレームワーク**: [pytest](https://docs.pytest.org/) - 柔軟で強力なテストフレームワーク
 - **セキュリティスキャナー**: [Bandit](https://bandit.readthedocs.io/) - セキュリティ脆弱性検出
@@ -98,11 +98,11 @@ hatch run security      # セキュリティスキャン
 hatch run test          # テスト実行
 hatch run all-checks    # 全チェック実行
 
-# 直接コマンド実行
+# 2025年版 Ruff統合コマンド
 ruff check .                    # リンティング
-ruff check --fix .              # 自動修正
-black .                         # フォーマット
-black --check .                 # フォーマットチェック
+ruff check --fix .              # リント自動修正
+ruff format .                   # フォーマット
+ruff format --check .           # フォーマットチェック
 mypy src                        # 型チェック
 bandit -r src/                  # セキュリティスキャン
 pytest --cov=backend           # カバレッジ付きテスト
@@ -320,16 +320,11 @@ repos:
       - id: check-merge-conflict
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.5.0
+    rev: v0.8.0
     hooks:
       - id: ruff
         args: [--fix]
       - id: ruff-format
-
-  - repo: https://github.com/psf/black
-    rev: 24.4.2
-    hooks:
-      - id: black
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.5.1
@@ -356,15 +351,79 @@ pre-commit install
 pre-commit run --all-files
 
 # 特定のフックのみ実行
-pre-commit run black
+pre-commit run ruff
 
 # フックの更新
 pre-commit autoupdate
 ```
 
+## 🚀 2025年版統合ツールチェーン（Ruff完全移行）
+
+### Black から Ruff への移行メリット
+
+2025年現在、Ruffはフォーマッター機能を統合し、**Black + Flake8 + isort** を完全に置き換える統合ツールとして成熟しています：
+
+#### 🏎️ パフォーマンス向上
+- **30倍高速**: Ruffフォーマッターは99.9% Black互換でありながら30倍以上高速
+- **統一実行**: 1つのツールでリント+フォーマットを同時実行
+- **大規模対応**: 数万ファイルでもサブ秒での処理完了
+
+#### 🔧 開発体験の向上
+- **設定統一**: pyproject.toml内でリント・フォーマット設定を一元管理
+- **IDE統合**: 単一拡張機能ですべてのコード品質チェック
+- **エラー削減**: ツール間の競合・不整合を排除
+
+#### 📦 依存関係の簡素化
+
+```toml
+# ❌ 従来（複数ツール）
+dev = [
+    "black>=24.0.0",
+    "flake8>=6.0.0", 
+    "isort>=5.12.0",
+    "ruff>=0.5.0",
+]
+
+# ✅ 2025年版（Ruff統合）
+dev = [
+    "ruff>=0.8.0",  # リント + フォーマット統合
+    "mypy>=1.15.0",
+    "pytest>=8.0.0",
+]
+```
+
+#### 🔄 移行コマンド比較
+
+```bash
+# ❌ 従来の複数ステップ
+black .
+isort .
+flake8 .
+
+# ✅ 2025年版（1回の実行）
+ruff check --fix .  # リント + インポート整理
+ruff format .       # フォーマット
+```
+
+### 設定統合の利点
+
+```toml
+# pyproject.toml で全設定を一元管理
+[tool.ruff]
+line-length = 88
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "ANN"]  # 必要なルールのみ選択
+
+[tool.ruff.format]
+quote-style = "double"               # Black互換設定
+docstring-code-format = true         # docstring内コードも整形
+```
+
 ## 🔍 Ruff設定詳細
 
-### 有効化されているルール（抜粋）
+### 有効化されているルール（完全版）
 
 | カテゴリ | ルール | 説明 |
 |---------|--------|------|
@@ -379,6 +438,95 @@ pre-commit autoupdate
 | **RET** | flake8-return | return文の最適化 |
 | **SIM** | simplify | コード簡素化の提案 |
 | **PLR** | pylint-refactor | リファクタリング提案 |
+| **🔒 S** | **flake8-bandit** | **セキュリティ脆弱性検出** |
+| **📝 D** | **pydocstyle** | **ドキュメンテーション品質** |
+
+#### 新規追加：セキュリティルール (S)
+
+セキュリティ脆弱性を自動検出する重要なルール：
+
+| ルールID | 説明 | 検出例 |
+|----------|------|--------|
+| **S101** | `assert`文の使用 | `assert password == "secret"` |
+| **S102** | `exec`の使用 | `exec(user_input)` |
+| **S103** | ファイルパーミッション設定 | `os.chmod(file, 0o777)` |
+| **S104** | ハードコードされた認証情報 | `password = "admin123"` |
+| **S105** | ハードコードされたパスワード | `if pwd == "password":` |
+| **S106** | ハードコードされたパスワード（引数） | `connect(password="secret")` |
+| **S107** | ハードコードされたパスワード（デフォルト値） | `def login(pwd="admin"):` |
+| **S108** | 一時ファイルの不安全な作成 | `tempfile.mktemp()` |
+| **S110** | `try-except-pass`パターン | 例外の隠蔽 |
+| **S201** | `flask.debug=True` | デバッグモードの本番使用 |
+| **S301** | `pickle.loads()` | 信頼できないデータのデシリアライズ |
+| **S306** | `mktemp`の使用 | 競合状態の脆弱性 |
+| **S307** | `eval()`の使用 | 任意コード実行リスク |
+| **S308** | `mark_safe()`の使用 | XSS脆弱性のリスク |
+| **S501** | SSL証明書検証の無効化 | `verify=False` |
+| **S506** | `yaml.load()`の使用 | 任意コード実行リスク |
+| **S601** | Shell injectionリスク | `os.system(user_input)` |
+| **S602** | `subprocess`でのshell使用 | `shell=True` |
+
+#### 新規追加：ドキュメンテーションルール (D)
+
+Googleスタイルdocstringの品質を保証：
+
+| ルールID | 説明 | 要求事項 |
+|----------|------|----------|
+| **D100** | パブリックモジュールのdocstring | モジュールレベルの説明 |
+| **D101** | パブリッククラスのdocstring | クラスの目的と使用法 |
+| **D102** | パブリックメソッドのdocstring | メソッドの説明 |
+| **D103** | パブリック関数のdocstring | 引数、戻り値、例外の説明 |
+| **D104** | パブリックパッケージのdocstring | `__init__.py`の説明 |
+| **D200** | ワンライナーdocstring | 簡潔な説明 |
+| **D205** | 空行の要求 | 要約と詳細説明の間 |
+| **D400** | 最初の行はピリオドで終了 | 文として完成 |
+| **D401** | 命令形での記述 | "Calculate..."ではなく"Calculates..." |
+| **D407** | セクションのアンダーライン | Args:、Returns:等 |
+
+#### Googleスタイルdocstringの例
+
+```python
+def calculate_user_score(
+    user_id: int, 
+    include_bonus: bool = False,
+    weight_factor: float = 1.0
+) -> tuple[int, dict[str, Any]]:
+    """Calculate the total score for a specific user.
+    
+    This function computes the user's score based on their activities
+    and optionally includes bonus points from special events.
+    
+    Args:
+        user_id: The unique identifier for the user.
+        include_bonus: Whether to include bonus points in calculation.
+            Defaults to False.
+        weight_factor: Multiplier for the final score. Must be positive.
+            Defaults to 1.0.
+    
+    Returns:
+        A tuple containing:
+        - The calculated total score as an integer
+        - A dictionary with score breakdown details
+    
+    Raises:
+        ValueError: If user_id is not positive or weight_factor is not positive.
+        UserNotFoundError: If the user_id does not exist in the database.
+    
+    Example:
+        >>> score, details = calculate_user_score(123, include_bonus=True)
+        >>> print(f"User score: {score}")
+        User score: 1250
+        >>> print(details)
+        {'base_score': 1000, 'bonus': 250, 'weight': 1.0}
+    """
+    if user_id <= 0:
+        raise ValueError("user_id must be positive")
+    if weight_factor <= 0:
+        raise ValueError("weight_factor must be positive")
+    
+    # 実装...
+    return score, breakdown
+```
 
 ### 除外されているルール
 
@@ -1003,7 +1151,7 @@ uv pip install -e ".[dev]"
 ### 公式ドキュメント
 - [uv ガイド](https://github.com/astral-sh/uv) - 超高速パッケージマネージャー
 - [Ruff ルール一覧](https://docs.astral.sh/ruff/rules/) - リンティングルール完全ガイド
-- [Black 設定オプション](https://black.readthedocs.io/en/stable/) - コードフォーマッター
+- [Ruff ドキュメント](https://docs.astral.sh/ruff/) - 統合リンター・フォーマッター
 - [Mypy ドキュメント](http://mypy-lang.org/) - 静的型チェッカー
 - [pytest ドキュメント](https://docs.pytest.org/en/stable/) - テストフレームワーク
 - [Bandit ドキュメント](https://bandit.readthedocs.io/) - セキュリティスキャナー
@@ -1023,7 +1171,7 @@ uv pip install -e ".[dev]"
 ---
 
 💡 **開発効率向上のコツ**: 
-- IDEにRuff、Black、Mypyの拡張機能をインストール
+- IDEにRuff、Mypyの拡張機能をインストール（Ruffがフォーマットも担当）
 - 保存時の自動フォーマットを有効化
 - pre-commitフックでコミット前の品質チェック
 - 定期的な依存関係アップデートとセキュリティスキャン

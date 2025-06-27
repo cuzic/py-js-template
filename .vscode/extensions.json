@@ -1,0 +1,74 @@
+{
+  // VS Code Extensions Recommendations (2025 Best Practices)
+  "recommendations": [
+    // Python Development
+    "ms-python.python",                    // Python extension pack
+    "ms-python.vscode-pylance",           // Python language server
+    "charliermarsh.ruff",                 // Ruff unified linter + formatter (2025)
+    "ms-python.mypy-type-checker",        // Mypy type checker
+    "ms-python.debugpy",                  // Python debugger
+    
+    // JavaScript/TypeScript Development
+    "dbaeumer.vscode-eslint",             // ESLint (Flat Config support)
+    "esbenp.prettier-vscode",             // Prettier formatter
+    "styled-components.vscode-styled-components", // Styled components
+    "bradlc.vscode-tailwindcss",          // Tailwind CSS IntelliSense
+    
+    // React Development
+    "dsznajder.es7-react-js-snippets",    // React snippets
+    "burkeholland.simple-react-snippets",  // Simple React snippets
+    
+    // Testing
+    "vitest.explorer",                     // Vitest test explorer
+    "littlefoxteam.vscode-python-test-adapter", // Python test explorer
+    
+    // Git & Version Control
+    "eamodio.gitlens",                    // GitLens
+    "mhutchie.git-graph",                 // Git Graph
+    "github.vscode-pull-request-github",   // GitHub Pull Requests
+    
+    // Code Quality & Productivity
+    "SonarSource.sonarlint-vscode",       // SonarLint
+    "usernamehw.errorlens",               // Error Lens
+    "streetsidesoftware.code-spell-checker", // Spell checker
+    "wayou.vscode-todo-highlight",        // TODO Highlight
+    "gruntfuggly.todo-tree",              // Todo Tree
+    
+    // Documentation
+    "yzhang.markdown-all-in-one",         // Markdown All in One
+    "DavidAnson.vscode-markdownlint",     // Markdown linting
+    
+    // Utilities
+    "editorconfig.editorconfig",          // EditorConfig support
+    "mikestead.dotenv",                   // .env file support
+    "redhat.vscode-yaml",                 // YAML support
+    "tamasfe.even-better-toml",           // TOML support
+    
+    // Containers & Remote Development
+    "ms-vscode-remote.remote-containers",  // Dev Containers
+    "ms-vscode-remote.remote-wsl",        // WSL support
+    
+    // AI Assistance (2025)
+    "github.copilot",                     // GitHub Copilot
+    "github.copilot-chat",                // GitHub Copilot Chat
+    
+    // Performance & Debugging
+    "ms-vscode.js-debug-nightly",         // JavaScript debugger
+    "firefox-devtools.vscode-firefox-debug", // Firefox debugger
+    
+    // Theme & Icons (Optional)
+    "PKief.material-icon-theme",          // Material Icon Theme
+    "zhuangtongfa.material-theme"         // One Dark Pro theme
+  ],
+  
+  "unwantedRecommendations": [
+    // Deprecated or replaced extensions
+    "ms-python.python-linter",            // Replaced by Ruff
+    "ms-python.flake8",                   // Replaced by Ruff
+    "ms-python.pylint",                   // Replaced by Ruff
+    "ms-python.isort",                    // Handled by Ruff
+    "ms-python.black-formatter",          // Replaced by Ruff formatter
+    "HookyQR.beautify",                   // Replaced by Prettier
+    "eg2.tslint"                          // Deprecated - use ESLint
+  ]
+}

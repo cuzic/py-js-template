@@ -1,0 +1,124 @@
+name: Python CI (Improved)
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    # 最小権限の原則: 読み取り専用権限のみ
+    permissions:
+      contents: read
+      pull-requests: read
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+      
+      # 依存関係キャッシュ
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+      
+      - name: Install dependencies
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+      
+      # 検証のみ - 修正は行わない
+      - name: Check formatting with Ruff
+        run: uv run ruff format --check --diff .
+      
+      - name: Check linting with Ruff
+        run: uv run ruff check .
+      
+      - name: Type check with MyPy
+        run: uv run mypy src
+      
+      - name: Security check with Bandit
+        run: uv run bandit -r src/
+      
+      - name: Run tests with pytest
+        run: uv run pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
+      
+      - name: Upload coverage reports to Codecov
+        if: github.event_name == 'pull_request'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+      
+      - name: Upload coverage reports (artifact)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-report
+          path: |
+            backend/coverage.xml
+            backend/htmlcov/
+
+  # マトリックス戦略でPythonバージョンをテスト
+  test-matrix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    strategy:
+      matrix:
+        python-version: ['3.11', '3.12']
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v6
+      
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-python${{ matrix.python-version }}-uv-${{ hashFiles('**/pyproject.toml') }}
+          restore-keys: |
+            ${{ runner.os }}-python${{ matrix.python-version }}-uv-
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: |
+          uv venv
+          uv pip install -e ".[dev]"
+      
+      - name: Run tests
+        working-directory: backend
+        run: uv run pytest -v
