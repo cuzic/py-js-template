@@ -78,11 +78,7 @@ jobs:
           bun run lint --max-warnings 0
       
       - name: Run tests
-        run: |
-          mkdir -p src tests
-          echo "export function add(a: number, b: number): number { return a + b; }" > src/math.ts
-          echo "import { describe, it, expect } from 'vitest'; import { add } from '../src/math'; describe('add', () => { it('should add two numbers', () => { expect(add(1, 2)).toBe(3); }); });" > tests/math.test.ts
-          bun test
+        run: bun test
       
       - name: Run tests with coverage
         run: bun run test:coverage

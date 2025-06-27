@@ -37,9 +37,7 @@ jobs:
           python-version: '3.11'
       
       - name: Setup uv
-        uses: yezz123/setup-uv@v4
-        with:
-          uv-version: 'latest'
+        uses: astral-sh/setup-uv@v6
       
       - name: Install dependencies
         run: |
@@ -91,9 +89,6 @@ jobs:
       - name: Run tests with pytest
         run: |
           source .venv/bin/activate
-          mkdir -p tests
-          touch tests/__init__.py
-          echo "def test_placeholder(): assert True" > tests/test_placeholder.py
           pytest -v --cov=backend --cov-report=term-missing
       
       - name: Upload coverage reports
