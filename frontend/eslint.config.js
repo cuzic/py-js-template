@@ -12,7 +12,15 @@ import react from 'eslint-plugin-react';
 export default tseslint.config(
   // Ignore patterns
   {
-    ignores: ['dist/', 'node_modules/', '**/*.d.ts', 'coverage/', 'build/', '*.config.js', 'vite.config.ts'],
+    ignores: [
+      'dist/',
+      'node_modules/',
+      '**/*.d.ts',
+      'coverage/',
+      'build/',
+      '*.config.js',
+      'vite.config.ts',
+    ],
   },
 
   // Base configurations

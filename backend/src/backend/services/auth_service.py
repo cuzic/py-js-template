@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from backend.exceptions import (
     InvalidCredentialsError,
@@ -99,7 +99,7 @@ class AuthService:
         # Update last login
         await self.database.update_user(
             user.id,
-            {"last_login": datetime.now(timezone.utc)},
+            {"last_login": datetime.now(UTC)},
         )
 
         # Generate tokens

@@ -244,3 +244,8 @@ markers = [
     "slow: Slow running tests",
     "security: Security related tests",
 ]
+
+[dependency-groups]
+dev = [
+    "ruff>=0.12.1",
+]

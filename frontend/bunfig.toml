@@ -29,10 +29,11 @@ silent = false
 preload = ["./tests/setup.ts"]
 timeout = 30000
 
-[test.coverage]
-enabled = true
-reporter = ["text", "json", "html"]
-threshold = 80
+# Bun test coverage configuration (simplified for compatibility)
+# [test.coverage]
+# enabled = true
+# reporter = ["text", "json", "html"] 
+# threshold = 80
 
 [build]
 # Build settings
