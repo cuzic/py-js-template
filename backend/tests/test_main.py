@@ -1,5 +1,5 @@
-import pytest
-from backend.main import hello_world, calculate_sum
+
+from backend.main import calculate_sum, hello_world
 
 
 def test_hello_world():
