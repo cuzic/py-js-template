@@ -8,6 +8,8 @@ import reactRefresh from 'eslint-plugin-react-refresh';
 import jsxA11y from 'eslint-plugin-jsx-a11y';
 import simpleImportSort from 'eslint-plugin-simple-import-sort';
 import react from 'eslint-plugin-react';
+import vitest from 'eslint-plugin-vitest';
+import unicorn from 'eslint-plugin-unicorn';
 
 export default tseslint.config(
   // Ignore patterns
@@ -26,6 +28,7 @@ export default tseslint.config(
   // Base configurations
   prettierRecommended,
   eslint.configs.recommended,
+  unicorn.configs['flat/recommended'],
 
   // TypeScript files configuration
   {
@@ -114,9 +117,21 @@ export default tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      '@typescript-eslint/strict-boolean-expressions': 'off',
+      '@typescript-eslint/strict-boolean-expressions': [
+        'error',
+        {
+          allowString: false,
+          allowNumber: false,
+          allowNullableObject: false,
+          allowNullableBoolean: true,
+          allowNullableString: false,
+          allowNullableNumber: false,
+          allowAny: false,
+        },
+      ],
 
       // General Best Practices (2025)
+      complexity: ['warn', 10],
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'error',
       'no-var': 'error',
@@ -144,17 +159,35 @@ export default tseslint.config(
       ],
       'react-hooks/exhaustive-deps': 'error',
       'react-hooks/rules-of-hooks': 'error',
+
+      // Unicorn rule customizations
+      'unicorn/prevent-abbreviations': 'off', // Too strict for common abbreviations
+      'unicorn/no-null': 'off', // Allow null usage
+      'unicorn/prefer-module': 'warn',
+      'unicorn/filename-case': [
+        'error',
+        {
+          cases: {
+            camelCase: true,
+            pascalCase: true, // Allow PascalCase for React components
+          },
+          ignore: ['^\\[.*\\]$', '\\.config\\.(js|ts)$', '\\.test\\.(ts|tsx)$'],
+        },
+      ],
     },
   },
 
   // Test files configuration
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/__tests__/**'],
+    extends: [vitest.configs.recommended],
     rules: {
+      ...vitest.configs.recommended.rules,
       '@typescript-eslint/no-explicit-any': 'off',
       '@typescript-eslint/strict-boolean-expressions': 'off',
       'jsx-a11y/no-autofocus': 'off',
       'no-console': 'off',
+      'unicorn/no-useless-undefined': 'off',
     },
   },
 
@@ -168,6 +201,7 @@ export default tseslint.config(
     },
     rules: {
       '@typescript-eslint/explicit-function-return-type': 'off',
+      'unicorn/prefer-module': 'off', // Config files often use CommonJS
     },
   },
 );
