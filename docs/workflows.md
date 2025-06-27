@@ -75,7 +75,7 @@ permissions:
 - name: Setup Python
   uses: actions/setup-python@v5
   with:
-    python-version: '3.11'
+    python-version: '3.13'
 
 - name: Setup uv
   uses: astral-sh/setup-uv@v6
@@ -159,14 +159,14 @@ test-matrix:
   runs-on: ubuntu-latest
   strategy:
     matrix:
-      python-version: ['3.11', '3.12']
+      python-version: ['3.13', '3.12']
   
   steps:
     # ... 複数Pythonバージョンでテスト実行
 ```
 
 **新機能:**
-- **複数バージョンテスト**: Python 3.11と3.12で動作確認
+- **複数バージョンテスト**: Python 3.13と3.12で動作確認
 - **将来性保証**: 新バージョンとの互換性を事前検証
 
 ### 🛠️ 開発者向けワークフロー
@@ -442,7 +442,7 @@ python review.py sample_diff.txt --pr-number 123 --repo-name owner/repo
 - name: Setup Python
   uses: actions/setup-python@v5
   with:
-    python-version: '3.11'
+    python-version: '3.13'
 
 - name: Install dependencies
   run: pip install requests
@@ -589,7 +589,7 @@ branches-ignore:
 ```yaml
 strategy:
   matrix:
-    python-version: ['3.11', '3.12']
+    python-version: ['3.13', '3.12']
     os: [ubuntu-latest, windows-latest, macos-latest]
 ```
 
@@ -738,7 +738,7 @@ python review.py test_diff.txt 2>&1 | tee error.log
 strategy:
   matrix:
     include:
-      - python: '3.11'
+      - python: '3.13'
         node: '20'
       - python: '3.12'  
         node: '21'

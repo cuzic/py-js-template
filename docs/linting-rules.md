@@ -9,7 +9,7 @@
 ```toml
 [tool.ruff]
 line-length = 88              # Black と同じ行長制限
-target-version = "py311"      # Python 3.11 対応
+target-version = "py313"      # Python 3.13 対応
 
 [tool.ruff.lint]
 select = [

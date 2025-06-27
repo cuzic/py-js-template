@@ -28,19 +28,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          bun-version: latest
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
       
-      # 依存関係キャッシュ
-      - name: Cache bun dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-bun-
+      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
       
       - name: Install dependencies
         run: bun install --frozen-lockfile
@@ -107,23 +103,15 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          node-version: ${{ matrix.node-version }}
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
       
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v1
-        with:
-          bun-version: latest
-      
-      - name: Cache dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.bun/install/cache
-          key: ${{ runner.os }}-node${{ matrix.node-version }}-bun-${{ hashFiles('**/bun.lockb') }}
-          restore-keys: |
-            ${{ runner.os }}-node${{ matrix.node-version }}-bun-
+      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
       
       - name: Install dependencies
         working-directory: frontend

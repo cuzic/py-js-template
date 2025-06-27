@@ -5,7 +5,7 @@ This module demonstrates BDD approach focusing on user behavior
 rather than implementation details.
 """
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -46,7 +46,7 @@ class TestUserAuthenticationBehavior:
             name="John Doe",
             hashed_password="$2b$12$hashed_password_here",
             is_active=True,
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
         )
 
     class TestWhenUserAttemptsToLoginWithValidCredentials:
@@ -270,7 +270,7 @@ class TestUserAuthenticationBehavior:
             token_payload = {
                 "sub": "user123",
                 "email": "john.doe@example.com",
-                "exp": datetime.now() + timedelta(hours=1),
+                "exp": datetime.now(timezone.utc) + timedelta(hours=1),
             }
             auth_service.token_service.decode_token = Mock(return_value=token_payload)
             auth_service.database.get_user_by_id = AsyncMock(return_value=valid_user)

@@ -28,22 +28,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: '3.11'
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
       
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v6
+      # UVはmise経由でPythonと一緒にインストールされる
       
-      # 依存関係キャッシュ
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-uv-
+      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
       
       - name: Install dependencies
         run: |
@@ -91,27 +86,23 @@ jobs:
       contents: read
     strategy:
       matrix:
-        python-version: ['3.11', '3.12']
+        python-version: ['3.12', '3.13']
     
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
       
-      - name: Setup Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+      - name: Setup mise
+        uses: jdx/mise-action@v2
         with:
-          python-version: ${{ matrix.python-version }}
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
       
-      - name: Setup uv
-        uses: astral-sh/setup-uv@v6
+      # UVはmise経由でPythonと一緒にインストールされる
       
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-python${{ matrix.python-version }}-uv-${{ hashFiles('**/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-python${{ matrix.python-version }}-uv-
+      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
       
       - name: Install dependencies
         working-directory: backend

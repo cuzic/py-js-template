@@ -157,7 +157,7 @@ def calculate_sum(a: int, b: int) -> int:
 ```ini
 # mypy.ini
 [mypy]
-python_version = 3.11
+python_version = 3.13
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -411,7 +411,7 @@ ruff format .       # フォーマット
 # pyproject.toml で全設定を一元管理
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py313"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "ANN"]  # 必要なルールのみ選択
@@ -928,7 +928,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        python-version: ["3.13", "3.12"]
     
     steps:
     - uses: actions/checkout@v4

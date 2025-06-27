@@ -2,7 +2,7 @@
 
 import re
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 
 from backend.exceptions import (
     InvalidCredentialsError,
@@ -99,7 +99,7 @@ class AuthService:
         # Update last login
         await self.database.update_user(
             user.id,
-            {"last_login": datetime.now()},
+            {"last_login": datetime.now(timezone.utc)},
         )
 
         # Generate tokens
@@ -166,7 +166,7 @@ class AuthService:
 
         except TokenExpiredError:
             raise
-        except Exception as e:
+        except (ValueError, KeyError, TypeError) as e:
             return TokenValidationResult(is_valid=False, error=str(e))
 
     async def validate_password_strength(self, password: str) -> None:

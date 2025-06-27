@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "backend"
 version = "0.1.0"
 description = "Modern Python backend template"
-requires-python = ">=3.11"
+requires-python = ">=3.13"
 dependencies = []
 
 [project.optional-dependencies]
@@ -24,7 +24,7 @@ dev = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
+target-version = "py313"
 # 2025 Best Practice: Unified linter + formatter
 # Replaces Black, Flake8, isort, and more
 
@@ -123,9 +123,9 @@ ignore = [
     "TRY003",  # long messages outside exception class
     "EM101",   # exception must not use string literal
     "RSE102",  # unnecessary parentheses on raised exception
-    "DTZ005",  # datetime.now() without tz
-    "BLE001",  # do not catch blind exception
     "PLR2004", # magic value used in comparison
+    "DTZ005",  # timezone.utc is acceptable for explicit UTC usage
+    # "UP017",   # datetime.UTC is available in Python 3.13
 ]
 
 # 2025: Extended unfixable rules
@@ -167,7 +167,7 @@ test-fast = "pytest -x"
 all-checks = "hatch run lint && hatch run security && hatch run test"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.13"
 strict = true
 warn_return_any = true
 warn_unused_configs = true
@@ -201,7 +201,7 @@ omit = [
 ]
 
 [tool.coverage.report]
-fail_under = 50
+fail_under = 80
 precision = 2
 show_missing = true
 skip_covered = false
