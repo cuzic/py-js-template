@@ -55,10 +55,10 @@ jobs:
         run: bun run security:check
       
       - name: Run tests
-        run: bun run test || true  # Allow failure temporarily
+        run: bun run test
       
       - name: Run tests with coverage
-        run: bun run test:coverage || true  # Allow failure temporarily
+        run: bun run test:coverage
       
       # Accessibility tests placeholder
       # - name: Run accessibility tests
@@ -128,4 +128,4 @@ jobs:
       
       - name: Run tests
         working-directory: frontend
-        run: bun run test || true  # Allow failure temporarily
+        run: bun run test

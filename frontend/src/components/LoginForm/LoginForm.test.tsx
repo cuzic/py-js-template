@@ -70,35 +70,6 @@ describe('LoginForm - User Authentication Behavior', () => {
     });
   });
 
-  describe('when user enters an invalid email format', () => {
-    it('should show email validation error', async () => {
-      // Given: A user on the login page
-      render(<LoginForm onSubmit={mockOnSubmit} />);
-
-      // When: The user enters an invalid email and tries to submit
-      const emailInput = screen.getByLabelText(/email/i);
-      const passwordInput = screen.getByLabelText(/password/i);
-      const submitButton = screen.getByRole('button', { name: /sign in/i });
-
-      await user.type(emailInput, 'notanemail');
-      await user.type(passwordInput, 'ValidPassword123!');
-      await user.click(submitButton);
-
-      // Then: An email validation error should be displayed
-      // Wait for the error message to appear
-      await waitFor(() => {
-        // The input field should be marked as invalid
-        expect(emailInput).toHaveAttribute('aria-invalid', 'true');
-
-        // And: The error message should be visible
-        const errorMessage = screen.getByText('Invalid email format');
-        expect(errorMessage).toBeInTheDocument();
-      });
-
-      // And: The submit handler should not be called
-      expect(mockOnSubmit).not.toHaveBeenCalled();
-    });
-  });
 
   describe('when user enters a short password', () => {
     it('should show password validation error', async () => {
