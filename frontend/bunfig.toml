@@ -21,7 +21,7 @@ exact = false
 
 [run]
 # Runtime settings
-shell = "bash -c"
+shell = "bun"
 silent = false
 
 [test]
