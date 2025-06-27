@@ -40,12 +40,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
     }
 
     setIsLoading(true);
-    setErrors({});
+    // エラーをクリアするのは成功時のみ
 
     try {
       if (onSubmit !== undefined) {
         await onSubmit(email, password);
       }
+      setErrors({}); // 成功時にエラーをクリア
       setSuccessMessage('Welcome back!');
       // In a real app, redirect would happen here
     } catch {
