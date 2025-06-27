@@ -16,13 +16,13 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
   const validateForm = (): boolean => {
     const newErrors: { email?: string; password?: string } = {};
 
-    if (!email) {
+    if (email === '') {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       newErrors.email = 'Invalid email format';
     }
 
-    if (!password) {
+    if (password === '') {
       newErrors.password = 'Password is required';
     } else if (password.length < 8) {
       newErrors.password = 'Password must be at least 8 characters';
@@ -43,7 +43,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
     setErrors({});
 
     try {
-      if (onSubmit) {
+      if (onSubmit !== undefined) {
         await onSubmit(email, password);
       }
       setSuccessMessage('Welcome back!');
@@ -60,7 +60,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
       <form onSubmit={(e) => void handleSubmit(e)} className="login-form">
         <h2>Sign In</h2>
 
-        {successMessage && (
+        {successMessage !== '' && (
           <div className="success-message" role="alert">
             {successMessage}
           </div>
@@ -77,11 +77,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             }}
             placeholder="Enter your email"
             aria-label="Email"
-            aria-invalid={!!errors.email}
-            aria-describedby={errors.email ? 'email-error' : undefined}
+            aria-invalid={errors.email !== undefined}
+            aria-describedby={errors.email !== undefined ? 'email-error' : undefined}
             disabled={isLoading}
           />
-          {errors.email && (
+          {errors.email !== undefined && (
             <span id="email-error" className="error-message" role="alert">
               {errors.email}
             </span>
@@ -99,11 +99,11 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSubmit }) => {
             }}
             placeholder="Enter your password"
             aria-label="Password"
-            aria-invalid={!!errors.password}
-            aria-describedby={errors.password ? 'password-error' : undefined}
+            aria-invalid={errors.password !== undefined}
+            aria-describedby={errors.password !== undefined ? 'password-error' : undefined}
             disabled={isLoading}
           />
-          {errors.password && (
+          {errors.password !== undefined && (
             <span id="password-error" className="error-message" role="alert">
               {errors.password}
             </span>

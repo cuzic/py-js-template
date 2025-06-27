@@ -163,6 +163,7 @@ export default tseslint.config(
       // Unicorn rule customizations
       'unicorn/prevent-abbreviations': 'off', // Too strict for common abbreviations
       'unicorn/no-null': 'off', // Allow null usage
+      'unicorn/no-negated-condition': 'off', // Allow negated conditions for readability
       'unicorn/prefer-module': 'warn',
       'unicorn/filename-case': [
         'error',
