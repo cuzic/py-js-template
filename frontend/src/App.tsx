@@ -1,21 +1,21 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 
 interface CalculatorProps {
   initialValue?: number;
 }
 
-function Calculator({ initialValue = 0 }: CalculatorProps) {
+function Calculator({ initialValue = 0 }: CalculatorProps): React.JSX.Element {
   const [count, setCount] = useState(initialValue);
 
-  const increment = () => {
+  const increment = (): void => {
     setCount((prev) => prev + 1);
   };
 
-  const decrement = () => {
+  const decrement = (): void => {
     setCount((prev) => prev - 1);
   };
 
-  const reset = () => {
+  const reset = (): void => {
     setCount(initialValue);
   };
 
@@ -40,6 +40,6 @@ function Calculator({ initialValue = 0 }: CalculatorProps) {
   );
 }
 
-export default function App() {
+export default function App(): React.JSX.Element {
   return <Calculator initialValue={0} />;
 }

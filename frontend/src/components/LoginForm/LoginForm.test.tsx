@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { LoginForm } from './LoginForm';
 
 // Mock submit handler
@@ -27,7 +28,7 @@ describe('LoginForm - User Authentication Behavior', () => {
 
       // Then: The success message should be displayed
       expect(await screen.findByText('Welcome back!')).toBeInTheDocument();
-      
+
       // And: The submit handler should be called with correct arguments
       expect(mockOnSubmit).toHaveBeenCalledWith('john@example.com', 'ValidPassword123!');
     });
@@ -44,7 +45,7 @@ describe('LoginForm - User Authentication Behavior', () => {
       // Then: Validation errors should be displayed
       expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
       expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
-      
+
       // And: The submit handler should not be called
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
@@ -63,7 +64,7 @@ describe('LoginForm - User Authentication Behavior', () => {
 
       // Then: An error message should be displayed
       expect(await screen.findByText(/invalid email or password/i)).toBeInTheDocument();
-      
+
       // And: The success message should not be shown
       expect(screen.queryByText('Welcome back!')).not.toBeInTheDocument();
     });
@@ -75,13 +76,25 @@ describe('LoginForm - User Authentication Behavior', () => {
       render(<LoginForm onSubmit={mockOnSubmit} />);
 
       // When: The user enters an invalid email and tries to submit
-      await user.type(screen.getByLabelText(/email/i), 'notanemail');
-      await user.type(screen.getByLabelText(/password/i), 'ValidPassword123!');
-      await user.click(screen.getByRole('button', { name: /sign in/i }));
+      const emailInput = screen.getByLabelText(/email/i);
+      const passwordInput = screen.getByLabelText(/password/i);
+      const submitButton = screen.getByRole('button', { name: /sign in/i });
+
+      await user.type(emailInput, 'notanemail');
+      await user.type(passwordInput, 'ValidPassword123!');
+      await user.click(submitButton);
 
       // Then: An email validation error should be displayed
-      expect(await screen.findByText(/invalid email format/i)).toBeInTheDocument();
-      
+      // Wait for the error message to appear
+      await waitFor(() => {
+        // The input field should be marked as invalid
+        expect(emailInput).toHaveAttribute('aria-invalid', 'true');
+
+        // And: The error message should be visible
+        const errorMessage = screen.getByText('Invalid email format');
+        expect(errorMessage).toBeInTheDocument();
+      });
+
       // And: The submit handler should not be called
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
@@ -98,8 +111,10 @@ describe('LoginForm - User Authentication Behavior', () => {
       await user.click(screen.getByRole('button', { name: /sign in/i }));
 
       // Then: A password validation error should be displayed
-      expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
-      
+      expect(
+        await screen.findByText(/password must be at least 8 characters/i),
+      ).toBeInTheDocument();
+
       // And: The submit handler should not be called
       expect(mockOnSubmit).not.toHaveBeenCalled();
     });
@@ -108,9 +123,7 @@ describe('LoginForm - User Authentication Behavior', () => {
   describe('when the login request is in progress', () => {
     it('should disable the form and show loading state', async () => {
       // Given: A slow authentication service
-      mockOnSubmit.mockImplementation(
-        () => new Promise(resolve => setTimeout(resolve, 1000))
-      );
+      mockOnSubmit.mockImplementation(() => new Promise((resolve) => setTimeout(resolve, 1000)));
 
       render(<LoginForm onSubmit={mockOnSubmit} />);
 
@@ -175,7 +188,7 @@ describe('LoginForm - User Authentication Behavior', () => {
       // Given: A form with validation errors
       render(<LoginForm onSubmit={mockOnSubmit} />);
       await user.click(screen.getByRole('button', { name: /sign in/i }));
-      
+
       // Verify errors are shown
       expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
 

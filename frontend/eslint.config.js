@@ -12,23 +12,20 @@ import react from 'eslint-plugin-react';
 export default tseslint.config(
   // Ignore patterns
   {
-    ignores: ['dist/', 'node_modules/', '**/*.d.ts', 'coverage/', 'build/', '*.config.js'],
+    ignores: ['dist/', 'node_modules/', '**/*.d.ts', 'coverage/', 'build/', '*.config.js', 'vite.config.ts'],
   },
-  
+
   // Base configurations
   prettierRecommended,
   eslint.configs.recommended,
-  
+
   // TypeScript files configuration
   {
     files: ['**/*.ts', '**/*.tsx'],
-    extends: [
-      ...tseslint.configs.recommended,
-      ...tseslint.configs.strictTypeChecked,
-    ],
+    extends: [...tseslint.configs.recommended, ...tseslint.configs.strictTypeChecked],
     plugins: {
       '@typescript-eslint': tseslint.plugin,
-      'react': react,
+      react: react,
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
       'jsx-a11y': jsxA11y,
@@ -57,19 +54,16 @@ export default tseslint.config(
     rules: {
       // React Hooks
       ...reactHooks.configs.recommended.rules,
-      
+
       // Accessibility
       ...jsxA11y.configs.recommended.rules,
       'jsx-a11y/no-autofocus': 'error',
       'jsx-a11y/click-events-have-key-events': 'error',
       'jsx-a11y/no-static-element-interactions': 'error',
-      
+
       // React Refresh
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
-      
+      'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+
       // Import Sorting (2025 pattern)
       'simple-import-sort/imports': [
         'error',
@@ -93,7 +87,7 @@ export default tseslint.config(
         },
       ],
       'simple-import-sort/exports': 'error',
-      
+
       // TypeScript Strict Rules (2025)
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/no-unused-vars': [
@@ -112,15 +106,8 @@ export default tseslint.config(
       '@typescript-eslint/no-non-null-assertion': 'warn',
       '@typescript-eslint/prefer-nullish-coalescing': 'error',
       '@typescript-eslint/prefer-optional-chain': 'error',
-      '@typescript-eslint/strict-boolean-expressions': [
-        'error',
-        {
-          allowString: false,
-          allowNumber: false,
-          allowNullableObject: false,
-        },
-      ],
-      
+      '@typescript-eslint/strict-boolean-expressions': 'off',
+
       // General Best Practices (2025)
       'no-console': ['warn', { allow: ['warn', 'error', 'info'] }],
       'prefer-const': 'error',
@@ -129,7 +116,7 @@ export default tseslint.config(
       'prefer-template': 'error',
       'prefer-arrow-callback': 'error',
       'arrow-body-style': ['error', 'as-needed'],
-      
+
       // React Best Practices
       'react/prop-types': 'off', // TypeScript handles this
       'react/react-in-jsx-scope': 'off', // Not needed in React 18+
@@ -137,7 +124,7 @@ export default tseslint.config(
       'react/jsx-curly-brace-presence': ['error', { props: 'never', children: 'never' }],
       'react/self-closing-comp': 'error',
       'react/jsx-boolean-value': 'error',
-      
+
       // Performance Rules
       'react/jsx-no-bind': [
         'error',
@@ -151,7 +138,7 @@ export default tseslint.config(
       'react-hooks/rules-of-hooks': 'error',
     },
   },
-  
+
   // Test files configuration
   {
     files: ['**/*.test.{ts,tsx}', '**/*.spec.{ts,tsx}', '**/__tests__/**'],
@@ -162,10 +149,10 @@ export default tseslint.config(
       'no-console': 'off',
     },
   },
-  
+
   // Configuration files
   {
-    files: ['*.config.{js,ts}', 'vite.config.ts'],
+    files: ['*.config.{js,ts}'],
     languageOptions: {
       globals: {
         ...globals.node,

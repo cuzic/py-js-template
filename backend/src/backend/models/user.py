@@ -1,23 +1,23 @@
 """User model definition."""
+
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 
 @dataclass
 class User:
     """User model representing an authenticated user."""
-    
+
     id: str
     email: str
     name: str
     hashed_password: str
     is_active: bool
     created_at: datetime
-    updated_at: Optional[datetime] = None
-    last_login: Optional[datetime] = None
-    
-    def to_dict(self) -> dict:
+    updated_at: datetime | None = None
+    last_login: datetime | None = None
+
+    def to_dict(self) -> dict[str, str | bool | None]:
         """Convert user to dictionary representation."""
         return {
             "id": self.id,

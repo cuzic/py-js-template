@@ -23,29 +23,30 @@
     "clean": "rm -rf dist node_modules .bun"
   },
   "dependencies": {
+    "eslint-config-prettier": "^10.1.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
     "@eslint/js": "^9.15.0",
+    "@testing-library/jest-dom": "^6.6.3",
+    "@testing-library/react": "^16.0.1",
+    "@testing-library/user-event": "^14.5.2",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@typescript-eslint/eslint-plugin": "^8.15.0",
     "@typescript-eslint/parser": "^8.15.0",
     "@vitejs/plugin-react": "^4.3.3",
     "@vitest/coverage-v8": "^2.1.8",
-    "@testing-library/react": "^16.0.1",
-    "@testing-library/jest-dom": "^6.6.3",
-    "@testing-library/user-event": "^14.5.2",
-    "jsdom": "^25.0.1",
     "eslint": "^9.15.0",
+    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-prettier": "^5.2.1",
     "eslint-plugin-react": "^7.37.2",
     "eslint-plugin-react-hooks": "^5.0.0",
     "eslint-plugin-react-refresh": "^0.4.14",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "globals": "^15.12.0",
+    "jsdom": "^25.0.1",
     "prettier": "^3.6.0",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "typescript": "^5.7.2",
@@ -58,5 +59,7 @@
     "bun": ">=1.0.0"
   },
   "packageManager": "bun@1.1.42",
-  "trustedDependencies": ["@vitest/coverage-v8"]
+  "trustedDependencies": [
+    "@vitest/coverage-v8"
+  ]
 }

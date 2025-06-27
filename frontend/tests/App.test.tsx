@@ -1,6 +1,7 @@
-import { describe, it, expect, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { beforeEach, describe, expect, it } from 'vitest';
+
 import App from '../src/App';
 
 describe('App', () => {
@@ -33,11 +34,11 @@ describe('App', () => {
     render(<App />);
     const incrementButton = screen.getByText('+1');
     const resetButton = screen.getByText('Reset');
-    
+
     await user.click(incrementButton);
     await user.click(incrementButton);
     expect(screen.getByText('Count: 2')).toBeInTheDocument();
-    
+
     await user.click(resetButton);
     expect(screen.getByText('Count: 0')).toBeInTheDocument();
   });

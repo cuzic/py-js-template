@@ -5,19 +5,20 @@ This module demonstrates BDD approach focusing on user behavior
 rather than implementation details.
 """
 
-import pytest
-from unittest.mock import Mock, AsyncMock, patch
-from typing import Dict, Any
 from datetime import datetime, timedelta
+from unittest.mock import AsyncMock, Mock
 
-from backend.services.auth_service import AuthService
-from backend.models.user import User
+import pytest
+
+pytestmark = pytest.mark.asyncio
+
 from backend.exceptions import (
     InvalidCredentialsError,
-    UserNotFoundError,
     TokenExpiredError,
     ValidationError,
 )
+from backend.models.user import User
+from backend.services.auth_service import AuthService
 
 
 class TestUserAuthenticationBehavior:
@@ -29,7 +30,7 @@ class TestUserAuthenticationBehavior:
         mock_db = Mock()
         mock_token_service = Mock()
         mock_email_service = Mock()
-        
+
         return AuthService(
             database=mock_db,
             token_service=mock_token_service,
@@ -45,14 +46,16 @@ class TestUserAuthenticationBehavior:
             name="John Doe",
             hashed_password="$2b$12$hashed_password_here",
             is_active=True,
-            created_at=datetime.utcnow(),
+            created_at=datetime.now(),
         )
 
     class TestWhenUserAttemptsToLoginWithValidCredentials:
         """Behavior: User logs in with valid credentials."""
 
         async def test_should_successfully_authenticate_and_return_tokens(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A registered user with valid credentials
@@ -61,18 +64,19 @@ class TestUserAuthenticationBehavior:
             """
             # Given
             auth_service.database.get_user_by_email = AsyncMock(return_value=valid_user)
+            auth_service.database.update_user = AsyncMock()
             auth_service.token_service.verify_password = Mock(return_value=True)
             auth_service.token_service.create_access_token = Mock(
-                return_value="access_token_123"
+                return_value="access_token_123",
             )
             auth_service.token_service.create_refresh_token = Mock(
-                return_value="refresh_token_123"
+                return_value="refresh_token_123",
             )
 
             # When
             result = await auth_service.login(
                 email="john.doe@example.com",
-                password="ValidPassword123!"
+                password="ValidPassword123!",
             )
 
             # Then
@@ -80,15 +84,17 @@ class TestUserAuthenticationBehavior:
             assert result.access_token == "access_token_123"
             assert result.refresh_token == "refresh_token_123"
             assert result.user.email == "john.doe@example.com"
-            
+
             # Verify interactions
             auth_service.database.get_user_by_email.assert_called_once_with(
-                "john.doe@example.com"
+                "john.doe@example.com",
             )
             auth_service.token_service.verify_password.assert_called_once()
 
         async def test_should_update_last_login_timestamp(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A user logging in successfully
@@ -103,7 +109,7 @@ class TestUserAuthenticationBehavior:
             # When
             await auth_service.login(
                 email="john.doe@example.com",
-                password="ValidPassword123!"
+                password="ValidPassword123!",
             )
 
             # Then
@@ -117,7 +123,9 @@ class TestUserAuthenticationBehavior:
         """Behavior: User attempts login with invalid credentials."""
 
         async def test_should_reject_login_with_wrong_password(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A registered user
@@ -132,13 +140,14 @@ class TestUserAuthenticationBehavior:
             with pytest.raises(InvalidCredentialsError) as exc_info:
                 await auth_service.login(
                     email="john.doe@example.com",
-                    password="WrongPassword123!"
+                    password="WrongPassword123!",
                 )
-            
+
             assert "Invalid email or password" in str(exc_info.value)
 
         async def test_should_reject_login_for_non_existent_user(
-            self, auth_service: AuthService
+            self,
+            auth_service: AuthService,
         ) -> None:
             """
             Given: An email that is not registered
@@ -152,9 +161,9 @@ class TestUserAuthenticationBehavior:
             with pytest.raises(InvalidCredentialsError) as exc_info:
                 await auth_service.login(
                     email="nonexistent@example.com",
-                    password="AnyPassword123!"
+                    password="AnyPassword123!",
                 )
-            
+
             # Should not reveal that user doesn't exist
             assert "Invalid email or password" in str(exc_info.value)
             assert "not found" not in str(exc_info.value).lower()
@@ -163,7 +172,9 @@ class TestUserAuthenticationBehavior:
         """Behavior: Deactivated user attempts to login."""
 
         async def test_should_prevent_deactivated_user_from_logging_in(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A user account that has been deactivated
@@ -179,16 +190,18 @@ class TestUserAuthenticationBehavior:
             with pytest.raises(InvalidCredentialsError) as exc_info:
                 await auth_service.login(
                     email="john.doe@example.com",
-                    password="ValidPassword123!"
+                    password="ValidPassword123!",
                 )
-            
+
             assert "account has been deactivated" in str(exc_info.value).lower()
 
     class TestWhenUserRequestsPasswordReset:
         """Behavior: User requests password reset."""
 
         async def test_should_send_reset_email_for_existing_user(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A registered user who forgot their password
@@ -198,27 +211,28 @@ class TestUserAuthenticationBehavior:
             # Given
             auth_service.database.get_user_by_email = AsyncMock(return_value=valid_user)
             auth_service.token_service.create_reset_token = Mock(
-                return_value="reset_token_123"
+                return_value="reset_token_123",
             )
             auth_service.email_service.send_reset_email = AsyncMock()
 
             # When
             result = await auth_service.request_password_reset(
-                email="john.doe@example.com"
+                email="john.doe@example.com",
             )
 
             # Then
             assert result.success is True
             assert result.message == "Password reset email sent"
-            
+
             auth_service.email_service.send_reset_email.assert_called_once_with(
                 email="john.doe@example.com",
                 name="John Doe",
-                reset_token="reset_token_123"
+                reset_token="reset_token_123",
             )
 
         async def test_should_not_reveal_user_existence_for_unknown_email(
-            self, auth_service: AuthService
+            self,
+            auth_service: AuthService,
         ) -> None:
             """
             Given: An email that is not registered
@@ -230,7 +244,7 @@ class TestUserAuthenticationBehavior:
 
             # When
             result = await auth_service.request_password_reset(
-                email="nonexistent@example.com"
+                email="nonexistent@example.com",
             )
 
             # Then
@@ -243,7 +257,9 @@ class TestUserAuthenticationBehavior:
         """Behavior: System validates authentication tokens."""
 
         async def test_should_accept_valid_unexpired_token(
-            self, auth_service: AuthService, valid_user: User
+            self,
+            auth_service: AuthService,
+            valid_user: User,
         ) -> None:
             """
             Given: A valid authentication token
@@ -254,7 +270,7 @@ class TestUserAuthenticationBehavior:
             token_payload = {
                 "sub": "user123",
                 "email": "john.doe@example.com",
-                "exp": datetime.utcnow() + timedelta(hours=1)
+                "exp": datetime.now() + timedelta(hours=1),
             }
             auth_service.token_service.decode_token = Mock(return_value=token_payload)
             auth_service.database.get_user_by_id = AsyncMock(return_value=valid_user)
@@ -268,7 +284,8 @@ class TestUserAuthenticationBehavior:
             assert result.user.email == "john.doe@example.com"
 
         async def test_should_reject_expired_token(
-            self, auth_service: AuthService
+            self,
+            auth_service: AuthService,
         ) -> None:
             """
             Given: An expired authentication token
@@ -277,24 +294,30 @@ class TestUserAuthenticationBehavior:
             """
             # Given
             auth_service.token_service.decode_token = Mock(
-                side_effect=TokenExpiredError("Token has expired")
+                side_effect=TokenExpiredError("Token has expired"),
             )
 
             # When & Then
             with pytest.raises(TokenExpiredError) as exc_info:
                 await auth_service.validate_token("expired_token_123")
-            
+
             assert "Token has expired" in str(exc_info.value)
 
-    @pytest.mark.parametrize("email,expected_error", [
-        ("", "Email is required"),
-        ("invalid-email", "Invalid email format"),
-        ("@example.com", "Invalid email format"),
-        ("user@", "Invalid email format"),
-        ("user name@example.com", "Invalid email format"),
-    ])
+    @pytest.mark.parametrize(
+        ("email", "expected_error"),
+        [
+            ("", "Email is required"),
+            ("invalid-email", "Invalid email format"),
+            ("@example.com", "Invalid email format"),
+            ("user@", "Invalid email format"),
+            ("user name@example.com", "Invalid email format"),
+        ],
+    )
     async def test_should_validate_email_format(
-        self, auth_service: AuthService, email: str, expected_error: str
+        self,
+        auth_service: AuthService,
+        email: str,
+        expected_error: str,
     ) -> None:
         """
         Given: Various invalid email formats
@@ -304,18 +327,24 @@ class TestUserAuthenticationBehavior:
         # When & Then
         with pytest.raises(ValidationError) as exc_info:
             await auth_service.login(email=email, password="ValidPassword123!")
-        
+
         assert expected_error in str(exc_info.value)
 
-    @pytest.mark.parametrize("password,expected_error", [
-        ("", "Password is required"),
-        ("short", "Password must be at least 8 characters"),
-        ("12345678", "Password must contain letters and numbers"),
-        ("password", "Password must contain letters and numbers"),
-        ("PASSWORD123", "Password must contain uppercase and lowercase letters"),
-    ])
+    @pytest.mark.parametrize(
+        ("password", "expected_error"),
+        [
+            ("", "Password is required"),
+            ("short", "Password must be at least 8 characters"),
+            ("12345678", "Password must contain letters"),
+            ("password", "Password must contain numbers"),
+            ("PASSWORD123", "Password must contain uppercase and lowercase letters"),
+        ],
+    )
     async def test_should_validate_password_requirements(
-        self, auth_service: AuthService, password: str, expected_error: str
+        self,
+        auth_service: AuthService,
+        password: str,
+        expected_error: str,
     ) -> None:
         """
         Given: Various invalid password formats
@@ -325,5 +354,5 @@ class TestUserAuthenticationBehavior:
         # When & Then
         with pytest.raises(ValidationError) as exc_info:
             await auth_service.validate_password_strength(password)
-        
+
         assert expected_error in str(exc_info.value)

@@ -46,7 +46,7 @@
   border-color: #007bff;
 }
 
-.form-group input[aria-invalid="true"] {
+.form-group input[aria-invalid='true'] {
   border-color: #dc3545;
 }
 
