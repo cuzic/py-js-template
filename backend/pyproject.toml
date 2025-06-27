@@ -6,7 +6,6 @@ build-backend = "hatchling.build"
 name = "backend"
 version = "0.1.0"
 description = "Modern Python backend template"
-readme = "README.md"
 requires-python = ">=3.11"
 dependencies = []
 

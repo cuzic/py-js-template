@@ -1,0 +1,6 @@
+[test]
+preload = ["./tests/setup.ts"]
+
+[test.coverage]
+enabled = true
+reporter = ["text", "json", "html"]

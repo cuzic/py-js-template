@@ -199,4 +199,9 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
+          if [ -z "$GEMINI_API_KEY" ]; then
+            echo "⚠️ GEMINI_API_KEY is not set. Skipping AI review."
+            echo "Please set the GEMINI_API_KEY secret in your repository settings."
+            exit 0
+          fi
           python review.py

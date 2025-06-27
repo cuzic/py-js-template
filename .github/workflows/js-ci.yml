@@ -78,7 +78,7 @@ jobs:
           bun run lint --max-warnings 0
       
       - name: Run tests
-        run: bun test
+        run: bun run test
       
       - name: Run tests with coverage
         run: bun run test:coverage
