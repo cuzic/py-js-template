@@ -1,0 +1,248 @@
+# 品質分析専用ワークフロー
+# Option B完全分離戦略: 詳細分析・レポート生成専用
+
+name: Quality Analysis
+
+on:
+  schedule:
+    # 毎週月曜日の午前2時に実行（週次品質分析）
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+    inputs:
+      analysis_depth:
+        description: '分析深度レベル'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+        - 'standard'
+        - 'comprehensive'
+        - 'minimal'
+      target_scope:
+        description: '分析対象範囲'
+        required: false
+        default: 'both'
+        type: choice
+        options:
+        - 'both'
+        - 'python-only'
+        - 'javascript-only'
+
+env:
+  FORCE_COLOR: 1
+
+permissions:
+  contents: read
+  pull-requests: write
+  actions: read
+
+jobs:
+  # === Python品質分析 ===
+  python-quality-analysis:
+    name: "🐍 Python品質分析"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    if: github.event_name == 'schedule' || github.event.inputs.target_scope == 'both' || github.event.inputs.target_scope == 'python-only'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 履歴分析のため全履歴取得
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+
+      - name: Install Python dependencies
+        run: |
+          cd backend
+          uv sync --all-extras
+
+      - name: Comprehensive Python analysis
+        run: |
+          cd backend
+          mkdir -p quality-reports
+          
+          echo "🔍 詳細Ruff分析..."
+          uv run ruff check . --output-format=json > quality-reports/ruff-detailed.json || true
+          uv run ruff check . --statistics > quality-reports/ruff-stats.txt || true
+          
+          echo "🎯 MyPy詳細分析..."
+          uv run mypy src --html-report quality-reports/mypy-html || true
+          uv run mypy src --txt-report quality-reports/mypy-txt || true
+          uv run mypy src --json-report quality-reports/mypy-report.json || true
+          
+          echo "🛡️ Bandit詳細セキュリティ分析..."
+          uv run bandit -r src/ -f json -o quality-reports/bandit-report.json || true
+          uv run bandit -r src/ -f html -o quality-reports/bandit-report.html || true
+          
+          echo "📊 コード複雑度分析..."
+          uv run radon cc src/ --json > quality-reports/complexity.json || true
+          uv run radon mi src/ --json > quality-reports/maintainability.json || true
+          
+          echo "📈 テストカバレッジ詳細分析..."
+          uv run pytest --cov=backend --cov-report=html:quality-reports/coverage-html --cov-report=json:quality-reports/coverage.json --cov-report=xml:quality-reports/coverage.xml -q || true
+          
+          echo "🔒 依存関係脆弱性スキャン..."
+          uvx pip-audit --format=json --output=quality-reports/security-audit.json || true
+          uvx safety check --json --output quality-reports/safety-check.json || true
+
+      - name: Generate Python quality summary
+        run: |
+          cd backend
+          python3 ../scripts/analyze-python-quality.py
+
+      - name: Upload Python quality reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-quality-reports
+          path: backend/quality-reports/
+          retention-days: 30
+
+  # === JavaScript品質分析 ===
+  javascript-quality-analysis:
+    name: "📜 JavaScript品質分析"
+    runs-on: ubuntu-24.04
+    timeout-minutes: 8
+    if: github.event_name == 'schedule' || github.event.inputs.target_scope == 'both' || github.event.inputs.target_scope == 'javascript-only'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+
+      - name: Install JavaScript dependencies
+        run: |
+          cd frontend
+          bun install --frozen-lockfile
+
+      - name: Comprehensive JavaScript analysis
+        run: |
+          cd frontend
+          mkdir -p quality-reports
+          
+          echo "🔍 詳細ESLint分析..."
+          bun exec eslint . --format=json --output-file=quality-reports/eslint-detailed.json || true
+          bun exec eslint . --format=html --output-file=quality-reports/eslint-report.html || true
+          
+          echo "🎯 TypeScript詳細分析..."
+          bun run typecheck --pretty false > quality-reports/typescript-detailed.txt 2>&1 || true
+          
+          echo "📦 依存関係分析..."
+          bun audit --format=json > quality-reports/dependency-audit.json 2>&1 || true
+          
+          echo "⚡ パフォーマンス分析..."
+          bun run build
+          
+          # バンドル分析
+          ls -la dist/assets/ > quality-reports/bundle-files.txt || true
+          du -h dist/assets/* > quality-reports/bundle-sizes.txt 2>/dev/null || true
+          
+          # Webpack/Viteバンドル分析（もし利用可能なら）
+          if [ -f "dist/stats.json" ]; then
+            cp dist/stats.json quality-reports/
+          fi
+          
+          echo "🧪 テストカバレッジ詳細分析..."
+          bun run test:coverage || true
+          
+          if [ -d "coverage" ]; then
+            cp -r coverage quality-reports/coverage-html/
+          fi
+
+      - name: Generate JavaScript quality summary
+        run: |
+          cd frontend
+          node ../scripts/analyze-javascript-quality.js
+
+      - name: Upload JavaScript quality reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: javascript-quality-reports
+          path: frontend/quality-reports/
+          retention-days: 30
+
+  # === 品質トレンド分析 ===
+  quality-trend-analysis:
+    name: "📈 品質トレンド分析"
+    runs-on: ubuntu-24.04
+    needs: [python-quality-analysis, javascript-quality-analysis]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download quality reports
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-quality-reports"
+          merge-multiple: true
+          path: quality-reports/
+
+      - name: Generate comprehensive quality dashboard
+        run: |
+          # 品質ダッシュボードスクリプト実行
+          chmod +x scripts/quality-dashboard.sh
+          ./scripts/quality-dashboard.sh 30
+
+      - name: Create quality summary comment
+        if: false  # 手動実行時はコメント不要
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            
+            let summary = '# 📊 品質分析レポート\n\n';
+            
+            try {
+              // Python品質サマリー
+              const pythonSummary = JSON.parse(fs.readFileSync('quality-reports/python-summary.json', 'utf8'));
+              summary += `## 🐍 Python品質\n`;
+              summary += `- Ruff違反: ${pythonSummary.ruff_violations}件\n`;
+              summary += `- MyPy エラー: ${pythonSummary.mypy_errors}件\n`;
+              summary += `- セキュリティ問題: ${pythonSummary.bandit_issues}件\n`;
+              summary += `- テストカバレッジ: ${pythonSummary.test_coverage}%\n\n`;
+            } catch (e) {
+              summary += '## 🐍 Python品質\nレポート生成エラー\n\n';
+            }
+            
+            try {
+              // JavaScript品質サマリー
+              const jsSummary = JSON.parse(fs.readFileSync('quality-reports/javascript-summary.json', 'utf8'));
+              summary += `## 📜 JavaScript品質\n`;
+              summary += `- ESLint エラー: ${jsSummary.eslint_errors}件\n`;
+              summary += `- ESLint 警告: ${jsSummary.eslint_warnings}件\n`;
+              summary += `- TypeScript エラー: ${jsSummary.typescript_errors}件\n`;
+              summary += `- バンドルサイズ: ${jsSummary.bundle_size_kb}KB\n`;
+              summary += `- 依存関係脆弱性: ${jsSummary.dependency_vulnerabilities}件\n\n`;
+            } catch (e) {
+              summary += '## 📜 JavaScript品質\nレポート生成エラー\n\n';
+            }
+            
+            summary += '## 📋 詳細レポート\n';
+            summary += 'GitHub Actionsの「Summary」タブから詳細なレポートをダウンロードできます。\n\n';
+            summary += '---\n*この分析は品質専用ワークフローで生成されました*';
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });
+
+      - name: Upload combined quality dashboard
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-dashboard
+          path: quality-metrics/
+          retention-days: 90

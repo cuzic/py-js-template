@@ -97,6 +97,7 @@ jobs:
           name: build-artifacts
           path: frontend/dist/
 
+
   # Node.js バージョンマトリックステスト（将来の互換性確保）
   compatibility-check:
     runs-on: ubuntu-latest

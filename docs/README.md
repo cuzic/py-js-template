@@ -10,10 +10,12 @@
 
 ### 品質管理
 - [🔍 **リンティングルール**](./linting-rules.md) - 両言語の詳細なリンティング設定
+- [🔧 **Pre-commit ガイド**](./pre-commit-guide.md) - 自動フォーマッティングとコード品質チェック
 - [🧪 **テスト戦略**](./testing-guide.md) - テストの書き方とベストプラクティス
 
 ### CI/CD
 - [⚙️ **ワークフロー解説**](./workflows.md) - GitHub Actionsワークフローの詳細
+- [🔄 **ワークフロー分離戦略**](./workflow-separation-strategy.md) - 完全分離アーキテクチャの詳細
 - [🤖 **AI レビュー設定**](./ai-review.md) - Gemini APIによる自動コードレビュー
 
 ## 🚀 クイックスタート
@@ -21,8 +23,9 @@
 新しい開発者がプロジェクトに参加する際は、以下の順序でドキュメントを読むことを推奨します：
 
 1. **[Python開発ガイド](./python-guide.md)** または **[JavaScript開発ガイド](./javascript-guide.md)**
-2. **[テスト戦略](./testing-guide.md)**
-3. **[ワークフロー解説](./workflows.md)**
+2. **[Pre-commit ガイド](./pre-commit-guide.md)** - 開発環境のセットアップ
+3. **[テスト戦略](./testing-guide.md)**
+4. **[ワークフロー解説](./workflows.md)**
 
 ## 📝 ドキュメントの更新
 
