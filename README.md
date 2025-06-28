@@ -17,7 +17,7 @@ A comprehensive, battle-tested template for building full-stack applications wit
 ### 📜 **Modern JavaScript Frontend**
 - **React 18** with TypeScript and modern JSX transform
 - **Vite** for blazing-fast development and optimized builds
-- **Bun** as the primary package manager (with npm fallback)
+- **Bun** as the unified package manager and runtime
 - **ESLint 9** with flat config and strict TypeScript rules
 - **Prettier** for consistent code formatting
 - **Vitest** for unit and integration testing with React Testing Library
@@ -128,14 +128,14 @@ A comprehensive, battle-tested template for building full-stack applications wit
 > **mise Unified Tool Management**: This project uses `mise.toml` to manage ALL development tools:
 > - **Runtimes**: Python 3.13.5, Node.js 20.11.0, Bun 1.1.42
 > - **Python tools**: Black, Ruff, MyPy, pytest, Bandit (via pipx)
-> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (via npm)
+> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (via mise + npm for global tools)
 > - **Other tools**: GitHub CLI, uv package manager
 > 
 > **Tool Management Rules**:
 > - ✅ Use `mise exec -- <tool>` to run tools without PATH setup
 > - ✅ All global tools managed by mise (no duplicate npm global installs)
 > - ✅ Project dependencies still managed by uv (Python) and bun (JavaScript)
-> - ❌ Never use `npm install -g` or `pip install --user` for development tools
+> - ❌ Never use `npm install -g` or `pip install --user` for development tools (use mise instead)
 
 ## 🛠️ Development Commands
 
