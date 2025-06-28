@@ -128,15 +128,15 @@ A comprehensive, battle-tested template for building full-stack applications wit
 > **mise Unified Tool Management**: This project uses `mise.toml` to manage ALL development tools:
 > - **Runtimes**: Python 3.13.5, Node.js 20.11.0, Bun 1.1.42
 > - **Python tools**: Black, Ruff, MyPy, pytest, Bandit (via pipx)
-> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (via mise npm: backend using bun)
+> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (installed via bun through mise)
 > - **Other tools**: GitHub CLI, uv package manager
 > 
 > **Tool Management Rules**:
 > - ✅ Use `mise exec -- <tool>` to run tools without PATH setup
-> - ✅ All global tools managed by mise (no duplicate npm global installs)
+> - ✅ All global tools managed by mise with bun backend
 > - ✅ Project dependencies still managed by uv (Python) and bun (JavaScript)
-> - ✅ Bun backend enabled for npm: tools (`mise settings set npm.bun true`)
-> - ❌ Never use `npm install -g` or `pip install --user` for development tools (use mise instead)
+> - ✅ Bun backend enabled for all JavaScript tools (`mise settings set npm.bun true`)
+> - ❌ Never use `npm install -g` or `pip install --user` for development tools (use mise with bun)
 
 ## 🛠️ Development Commands
 
