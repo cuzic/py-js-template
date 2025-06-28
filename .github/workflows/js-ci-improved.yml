@@ -19,12 +19,12 @@ defaults:
 jobs:
   quality-check:
     runs-on: ubuntu-latest
-    # Skip CI if commit message contains [skip-ci] or PR has skip-ci label
+    # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
     # But always run on main branch
     if: |
       github.ref == 'refs/heads/main' ||
-      (!contains(github.event.head_commit.message, '[skip-ci]') &&
-       !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
     # 最小権限の原則: 読み取り尓用権限のみ
     permissions:
       contents: read
@@ -100,12 +100,12 @@ jobs:
   # Node.js バージョンマトリックステスト（将来の互換性確保）
   compatibility-check:
     runs-on: ubuntu-latest
-    # Skip CI if commit message contains [skip-ci] or PR has skip-ci label
+    # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
     # But always run on main branch
     if: |
       github.ref == 'refs/heads/main' ||
-      (!contains(github.event.head_commit.message, '[skip-ci]') &&
-       !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
     permissions:
       contents: read
     strategy:
