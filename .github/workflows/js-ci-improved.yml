@@ -19,7 +19,13 @@ defaults:
 jobs:
   quality-check:
     runs-on: ubuntu-latest
-    # 最小権限の原則: 読み取り専用権限のみ
+    # Skip CI if commit message contains [skip-ci] or PR has skip-ci label
+    # But always run on main branch
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (!contains(github.event.head_commit.message, '[skip-ci]') &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
+    # 最小権限の原則: 読み取り尓用権限のみ
     permissions:
       contents: read
       pull-requests: read
@@ -94,6 +100,12 @@ jobs:
   # Node.js バージョンマトリックステスト（将来の互換性確保）
   compatibility-check:
     runs-on: ubuntu-latest
+    # Skip CI if commit message contains [skip-ci] or PR has skip-ci label
+    # But always run on main branch
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (!contains(github.event.head_commit.message, '[skip-ci]') &&
+       !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
     permissions:
       contents: read
     strategy:
