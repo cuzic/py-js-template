@@ -92,6 +92,14 @@ gl         # git log --oneline -10
 ms         # mise ls (インストールされたツール一覧)
 msi        # mise install
 msu        # mise use
+
+# Direct mise tool execution
+mise-ruff    # Run Ruff directly
+mise-black   # Run Black directly
+mise-mypy    # Run MyPy directly
+mise-eslint  # Run ESLint directly
+mise-prettier # Run Prettier directly
+mise-tsc     # Run TypeScript compiler directly
 ```
 
 ## 📁 ファイル構造

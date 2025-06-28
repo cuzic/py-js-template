@@ -7,8 +7,29 @@ set -e
 
 echo "🚀 Starting DevContainer setup with mise (Dockerfileless)..."
 
+# Wait for mise to be fully installed by the devcontainer feature
+sleep 2
+
 # Activate mise for this script
 eval "$(mise activate bash)"
+
+# Verify mise installation
+echo "📋 Verifying mise installation..."
+mise --version
+
+# Install all tools from mise.toml
+echo "🔧 Installing all development tools from mise.toml..."
+mise install --yes
+
+# Verify tool installations
+echo "✅ Verifying tool installations..."
+echo "Python: $(mise exec -- python --version)"
+echo "Node.js: $(mise exec -- node --version)"
+echo "Bun: $(mise exec -- bun --version)"
+echo "Ruff: $(mise exec -- ruff --version)"
+echo "Black: $(mise exec -- black --version)"
+echo "TypeScript: $(mise exec -- tsc --version)"
+echo "ESLint: $(mise exec -- eslint --version)"
 
 # Add mise activation to shell profiles
 echo 'eval "$(mise activate bash)"' >> ~/.bashrc
@@ -85,6 +106,14 @@ alias pytest='python -m pytest'
 alias lint-py='cd backend && uv run ruff check . && uv run ruff format --check . && uv run mypy src'
 alias fix-py='cd backend && uv run ruff check --fix . && uv run ruff format .'
 alias test-py='cd backend && uv run pytest'
+
+# Mise tool aliases for direct usage
+alias mise-ruff='mise exec -- ruff'
+alias mise-black='mise exec -- black'
+alias mise-mypy='mise exec -- mypy'
+alias mise-eslint='mise exec -- eslint'
+alias mise-prettier='mise exec -- prettier'
+alias mise-tsc='mise exec -- tsc'
 
 # JavaScript aliases
 alias lint-js='cd frontend && bun run lint:check && bun run format:check && bun run typecheck'

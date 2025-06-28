@@ -89,7 +89,7 @@ A comprehensive, battle-tested template for building full-stack applications wit
 
 ### Option 2: Local Development with mise
 
-1. **Prerequisites**: Install [mise](https://mise.jdx.dev/) for version management
+1. **Prerequisites**: Install [mise](https://mise.jdx.dev/) for unified tool management
 
 2. **Shell setup** (one-time):
    ```bash
@@ -109,11 +109,11 @@ A comprehensive, battle-tested template for building full-stack applications wit
    git clone <your-repo>
    cd <repo-name>
    
-   # Install all required tool versions (Node.js, Python, Bun)
+   # Install all required tools (runtimes + development tools)
    mise install
    ```
 
-4. **Install dependencies**:
+4. **Install project dependencies**:
    ```bash
    # Backend setup
    cd backend
@@ -124,9 +124,17 @@ A comprehensive, battle-tested template for building full-stack applications wit
    bun install
    ```
 
-> **Note**: This project uses `mise.toml` to ensure consistent Node.js (20.11.0), Python (3.13.5), and Bun (1.1.42) versions across all team members. This prevents "works on my machine" issues.
+> **mise Unified Tool Management**: This project uses `mise.toml` to manage ALL development tools:
+> - **Runtimes**: Python 3.13.5, Node.js 20.11.0, Bun 1.1.42
+> - **Python tools**: Black, Ruff, MyPy, pytest, Bandit (via pipx)
+> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (via npm)
+> - **Other tools**: GitHub CLI, uv package manager
 > 
-> **Important**: After proper mise setup, you can use `bun` commands directly. Never use `bun upgrade` - version updates should be done through mise (`mise use bun@<version>`).
+> **Tool Management Rules**:
+> - ✅ Use `mise exec -- <tool>` to run tools without PATH setup
+> - ✅ All global tools managed by mise (no duplicate npm global installs)
+> - ✅ Project dependencies still managed by uv (Python) and bun (JavaScript)
+> - ❌ Never use `npm install -g` or `pip install --user` for development tools
 
 ## 🛠️ Development Commands
 
@@ -134,11 +142,16 @@ A comprehensive, battle-tested template for building full-stack applications wit
 ```bash
 cd backend
 
-# Quality checks
+# Quality checks (via mise-managed tools)
 uv run ruff check .          # Lint code
 uv run ruff format .         # Format code  
 uv run mypy src             # Type checking
 uv run bandit -r src/       # Security scan
+
+# Alternative: Direct mise execution
+mise exec -- ruff check backend/
+mise exec -- black backend/src/
+mise exec -- mypy backend/src/
 
 # Testing
 uv run pytest              # Run tests
@@ -153,12 +166,17 @@ uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run
 ```bash
 cd frontend
 
-# Quality checks
+# Quality checks (project dependencies)
 bun run lint:check          # Check linting
 bun run format:check        # Check formatting
 bun run typecheck          # TypeScript check
 bun run lint               # Fix linting issues
 bun run format             # Format code
+
+# Alternative: Direct mise execution
+mise exec -- eslint frontend/src/
+mise exec -- prettier frontend/src/ --check
+mise exec -- tsc --project frontend/tsconfig.json --noEmit
 
 # Development
 bun run dev                # Start dev server

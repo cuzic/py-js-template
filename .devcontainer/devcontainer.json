@@ -15,11 +15,12 @@
   "customizations": {
     "vscode": {
       "settings": {
-        // Python settings
-        "python.defaultInterpreterPath": "/usr/local/bin/python",
+        // Python settings (using mise-managed tools)
+        "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
         "python.terminal.activateEnvironment": true,
         "python.linting.enabled": true,
         "python.linting.ruffEnabled": true,
+        "python.linting.ruffPath": "/home/vscode/.local/share/mise/shims/ruff",
         "python.formatting.provider": "none",
         "python.testing.pytestEnabled": true,
         "python.testing.pytestArgs": ["tests"],
@@ -117,7 +118,7 @@
   },
 
   // Commands to run after the container is created
-  "postCreateCommand": "mise trust -- --non-interactive && mise install --yes && bash .devcontainer/setup.sh",
+  "postCreateCommand": "chmod +x .devcontainer/*.sh && mise trust -- --non-interactive && bash .devcontainer/setup.sh",
 
   // Commands to run when starting the container
   "postStartCommand": "bash .devcontainer/post-start.sh",
@@ -133,10 +134,8 @@
     // Mount mise data for persistence
     "source=mise-data,target=/home/vscode/.local/share/mise,type=volume",
     // Mount mise cache for better performance  
-    "source=mise-cache,target=/home/vscode/.cache/mise,type=volume",
-    // Mount git config and SSH keys
-    "source=${localEnv:HOME}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,consistency=cached",
-    "source=${localEnv:HOME}/.ssh,target=/home/vscode/.ssh,type=bind,consistency=cached"
+    "source=mise-cache,target=/home/vscode/.cache/mise,type=volume"
+    // Git config and SSH keys are handled by the devcontainer feature
   ],
 
   // Run as non-root user
