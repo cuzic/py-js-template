@@ -18,6 +18,8 @@ uv = "latest"        # Python パッケージマネージャー
 "pipx:bandit" = "latest"     # セキュリティ検査
 
 # === JavaScript/TypeScript 開発ツール ===
+# 注: mise は npm: プレフィックスを使用してグローバルツールをインストール
+# これらのツールは mise が内部的に npm を使用するが、プロジェクトは bun を使用
 "npm:typescript" = "latest"  # TypeScript コンパイラー
 "npm:eslint" = "latest"      # JavaScript リンター
 "npm:prettier" = "latest"    # コードフォーマッター

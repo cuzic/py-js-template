@@ -128,7 +128,7 @@ A comprehensive, battle-tested template for building full-stack applications wit
 > **mise Unified Tool Management**: This project uses `mise.toml` to manage ALL development tools:
 > - **Runtimes**: Python 3.13.5, Node.js 20.11.0, Bun 1.1.42
 > - **Python tools**: Black, Ruff, MyPy, pytest, Bandit (via pipx)
-> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (via mise + npm for global tools)
+> - **JS/TS tools**: TypeScript, ESLint, Prettier, Vite (global tools via mise's npm: backend)
 > - **Other tools**: GitHub CLI, uv package manager
 > 
 > **Tool Management Rules**:
