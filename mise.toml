@@ -19,7 +19,7 @@ uv = "latest"        # Python パッケージマネージャー
 
 # === JavaScript/TypeScript 開発ツール ===
 # 注: mise は npm: プレフィックスを使用してグローバルツールをインストール
-# これらのツールは mise が内部的に npm を使用するが、プロジェクトは bun を使用
+# npm.bun=true 設定により、実際には bun が高速インストールに使用される
 "npm:typescript" = "latest"  # TypeScript コンパイラー
 "npm:eslint" = "latest"      # JavaScript リンター
 "npm:prettier" = "latest"    # コードフォーマッター
