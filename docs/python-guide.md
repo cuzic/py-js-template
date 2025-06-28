@@ -50,16 +50,16 @@ backend/
 ```bash
 cd backend
 
-# 仮想環境作成
-uv venv
+# 依存関係と仮想環境の一括セットアップ
+uv sync --all-extras
 
-# 仮想環境の有効化
+# 仮想環境の有効化（必要に応じて）
 source .venv/bin/activate  # Linux/macOS
 # または
 .venv\Scripts\activate     # Windows
 
-# 開発依存関係のインストール
-uv pip install -e ".[dev]"
+# uv run を使う場合は仮想環境の有効化は不要
+uv run python --version
 ```
 
 ### pyproject.toml 設定例
@@ -90,22 +90,21 @@ all-checks = "hatch run lint && hatch run security && hatch run test"
 ### 開発用コマンド
 
 ```bash
-# Hatchスクリプトを使用（推奨）
-hatch run lint          # 全品質チェック
-hatch run lint-fix      # 自動修正
-hatch run type-check    # 型チェック
-hatch run security      # セキュリティスキャン
-hatch run test          # テスト実行
-hatch run all-checks    # 全チェック実行
+# uv run を使用（推奨）
+uv run ruff check .                    # リンティング
+uv run ruff check --fix .              # リント自動修正
+uv run ruff format .                   # フォーマット
+uv run ruff format --check .           # フォーマットチェック
+uv run mypy src                        # 型チェック
+uv run bandit -r src/                  # セキュリティスキャン
+uv run pytest --cov=backend           # カバレッジ付きテスト
 
-# 2025年版 Ruff統合コマンド
-ruff check .                    # リンティング
-ruff check --fix .              # リント自動修正
-ruff format .                   # フォーマット
-ruff format --check .           # フォーマットチェック
-mypy src                        # 型チェック
-bandit -r src/                  # セキュリティスキャン
-pytest --cov=backend           # カバレッジ付きテスト
+# 全チェック実行（CI相当）
+uv run ruff check . && uv run ruff format --check . && uv run mypy src && uv run pytest
+
+# mise 経由での実行（グローバルツールとして）
+mise exec -- ruff check backend/
+mise exec -- mypy backend/src/
 ```
 
 ## 📝 コーディングルール

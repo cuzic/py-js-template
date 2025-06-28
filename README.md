@@ -31,6 +31,7 @@ A comprehensive, battle-tested template for building full-stack applications wit
 
 ### 🚀 **CI/CD & Quality**
 - **GitHub Actions** workflows with mise-action for unified tool management
+- **CI skip functionality** for minor changes ([skip-ci] tag and skip-ci label)
 - **Security scanning** with Bandit and automated dependency updates
 - **Code coverage** tracking with detailed reporting
 - **AI-powered code review** with Gemini integration
@@ -234,6 +235,19 @@ The template includes three optimized GitHub Actions workflows:
 - Security pattern detection
 - Diff analysis and intelligent feedback
 - Review artifact uploads
+
+### ⏭️ CI Skip Functionality
+- **[skip-ci] tag**: Add to commit messages to skip CI on push events
+- **skip-ci label**: Add to PRs to skip CI for all commits in that PR
+- **Main branch protection**: CI always runs on main branch regardless of skip settings
+- **Usage examples**:
+  ```bash
+  # Skip CI for documentation updates
+  git commit -m "docs: Fix typo in README [skip-ci]"
+  
+  # Skip CI for PR using label
+  gh pr edit --add-label "skip-ci"
+  ```
 
 ## 🗄️ AI-Safe Development Environment
 
