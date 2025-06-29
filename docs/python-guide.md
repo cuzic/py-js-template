@@ -121,14 +121,14 @@ mise exec -- mypy backend/src/
 ```python
 def calculate_sum(a: int, b: int) -> int:
     """二つの整数の和を計算します。
-    
+
     Args:
         a: 第一の整数
         b: 第二の整数
-        
+
     Returns:
         二つの整数の和
-        
+
     Example:
         >>> calculate_sum(2, 3)
         5
@@ -205,11 +205,11 @@ T = TypeVar('T')
 
 class Repository(Generic[T]):
     """汎用リポジトリクラス"""
-    
+
     def find_by_id(self, entity_id: int) -> Optional[T]:
         # 実装
         return None
-    
+
     def save(self, entity: T) -> T:
         # 実装
         return entity
@@ -294,11 +294,11 @@ def read_file_unsafe(filename: str) -> str:
 def read_file_safe(filename: str, base_dir: str = "/safe/directory") -> str:
     base_path = Path(base_dir).resolve()
     file_path = (base_path / filename).resolve()
-    
+
     # ベースディレクトリ外へのアクセスを防ぐ
     if not str(file_path).startswith(str(base_path)):
         raise ValueError("Access denied: path outside base directory")
-    
+
     with open(file_path, 'r') as f:
         return f.read()
 ```
@@ -378,7 +378,7 @@ pre-commit autoupdate
 # ❌ 従来（複数ツール）
 dev = [
     "black>=24.0.0",
-    "flake8>=6.0.0", 
+    "flake8>=6.0.0",
     "isort>=5.12.0",
     "ruff>=0.5.0",
 ]
@@ -486,31 +486,31 @@ Googleスタイルdocstringの品質を保証：
 
 ```python
 def calculate_user_score(
-    user_id: int, 
+    user_id: int,
     include_bonus: bool = False,
     weight_factor: float = 1.0
 ) -> tuple[int, dict[str, Any]]:
     """Calculate the total score for a specific user.
-    
+
     This function computes the user's score based on their activities
     and optionally includes bonus points from special events.
-    
+
     Args:
         user_id: The unique identifier for the user.
         include_bonus: Whether to include bonus points in calculation.
             Defaults to False.
         weight_factor: Multiplier for the final score. Must be positive.
             Defaults to 1.0.
-    
+
     Returns:
         A tuple containing:
         - The calculated total score as an integer
         - A dictionary with score breakdown details
-    
+
     Raises:
         ValueError: If user_id is not positive or weight_factor is not positive.
         UserNotFoundError: If the user_id does not exist in the database.
-    
+
     Example:
         >>> score, details = calculate_user_score(123, include_bonus=True)
         >>> print(f"User score: {score}")
@@ -522,7 +522,7 @@ def calculate_user_score(
         raise ValueError("user_id must be positive")
     if weight_factor <= 0:
         raise ValueError("weight_factor must be positive")
-    
+
     # 実装...
     return score, breakdown
 ```
@@ -551,7 +551,7 @@ from backend.main import calculate_sum, hello_world
 
 class TestHelloWorld:
     """hello_world関数のテストクラス"""
-    
+
     def test_returns_correct_message(self):
         """正しいメッセージを返すことを確認"""
         result = hello_world()
@@ -561,22 +561,22 @@ class TestHelloWorld:
 
 class TestCalculateSum:
     """calculate_sum関数のテストクラス"""
-    
+
     def test_positive_numbers(self):
         """正の数の加算テスト"""
         assert calculate_sum(2, 3) == 5  # noqa: PLR2004
         assert calculate_sum(10, 20) == 30  # noqa: PLR2004
-    
+
     def test_negative_numbers(self):
         """負の数を含む加算テスト"""
         assert calculate_sum(-1, 1) == 0
         assert calculate_sum(-5, -3) == -8  # noqa: PLR2004
-    
+
     def test_zero_values(self):
         """ゼロを含む加算テスト"""
         assert calculate_sum(0, 0) == 0
         assert calculate_sum(5, 0) == 5  # noqa: PLR2004
-    
+
     @pytest.mark.parametrize("a,b,expected", [
         (1, 2, 3),
         (-1, 1, 0),
@@ -588,7 +588,7 @@ class TestCalculateSum:
     def test_parametrized_addition(self, a, b, expected):
         """パラメータ化テスト - 複数の入力値でテスト"""
         assert calculate_sum(a, b) == expected
-    
+
     @pytest.mark.parametrize("a,b", [
         ("not_a_number", 5),
         (5, "not_a_number"),
@@ -615,7 +615,7 @@ from backend.services.email_service import EmailService
 
 class TestUserService:
     """UserServiceクラスのテスト"""
-    
+
     @pytest.fixture
     def mock_database(self):
         """データベースモック"""
@@ -627,41 +627,41 @@ class TestUserService:
         }
         mock_db.save_user.return_value = True
         return mock_db
-    
+
     @pytest.fixture
     def user_service(self, mock_database):
         """UserServiceインスタンス"""
         return UserService(database=mock_database)
-    
+
     def test_get_user_by_id_success(self, user_service, mock_database):
         """IDによるユーザー取得テスト - 成功ケース"""
         # Act
         user = user_service.get_user_by_id(123)
-        
+
         # Assert
         assert user["name"] == "John Doe"
         assert user["email"] == "john@example.com"
         mock_database.get_user.assert_called_once_with(123)
-    
+
     def test_get_user_by_id_not_found(self, user_service, mock_database):
         """IDによるユーザー取得テスト - 見つからない場合"""
         # Arrange
         mock_database.get_user.return_value = None
-        
+
         # Act & Assert
         with pytest.raises(UserNotFoundError):
             user_service.get_user_by_id(999)
-    
+
     @patch('backend.services.user_service.EmailService')
     def test_send_welcome_email(self, mock_email_service, user_service):
         """ウェルカムメール送信テスト"""
         # Arrange
         mock_email_instance = mock_email_service.return_value
         mock_email_instance.send.return_value = True
-        
+
         # Act
         result = user_service.send_welcome_email("john@example.com")
-        
+
         # Assert
         assert result is True
         mock_email_instance.send.assert_called_once_with(
@@ -669,7 +669,7 @@ class TestUserService:
             subject="Welcome!",
             template="welcome"
         )
-    
+
     def test_batch_update_users(self, user_service, mock_database):
         """バッチユーザー更新のテスト"""
         # Arrange
@@ -678,10 +678,10 @@ class TestUserService:
             {"id": 2, "name": "Bob"},
             {"id": 3, "name": "Charlie"},
         ]
-        
+
         # Act
         user_service.batch_update_users(users)
-        
+
         # Assert - 複数回の呼び出しを確認
         expected_calls = [call(user) for user in users]
         mock_database.save_user.assert_has_calls(expected_calls)
@@ -704,9 +704,9 @@ def temp_file():
     with tempfile.NamedTemporaryFile(mode='w', delete=False) as f:
         f.write(json.dumps({"test": "data"}))
         temp_path = f.name
-    
+
     yield Path(temp_path)
-    
+
     # クリーンアップ
     Path(temp_path).unlink(missing_ok=True)
 
@@ -749,25 +749,25 @@ from backend.services.async_user_service import AsyncUserService
 
 class TestAsyncUserService:
     """非同期ユーザーサービスのテスト"""
-    
+
     @pytest.fixture
     def async_service(self):
         return AsyncUserService()
-    
+
     @pytest.mark.asyncio
     async def test_fetch_user_data(self, async_service):
         """非同期ユーザーデータ取得テスト"""
         with patch.object(async_service, '_api_call', new_callable=AsyncMock) as mock_call:
             # Arrange
             mock_call.return_value = {"id": 1, "name": "Alice"}
-            
+
             # Act
             result = await async_service.fetch_user_data(1)
-            
+
             # Assert
             assert result["name"] == "Alice"
             mock_call.assert_called_once_with("/users/1")
-    
+
     @pytest.mark.asyncio
     async def test_concurrent_user_fetch(self, async_service):
         """並行ユーザー取得テスト"""
@@ -778,7 +778,7 @@ class TestAsyncUserService:
                 {"id": 2, "name": "Bob"},
                 {"id": 3, "name": "Charlie"},
             ]
-            
+
             # Act
             tasks = [
                 async_service.fetch_user_data(1),
@@ -786,7 +786,7 @@ class TestAsyncUserService:
                 async_service.fetch_user_data(3),
             ]
             results = await asyncio.gather(*tasks)
-            
+
             # Assert
             assert len(results) == 3
             assert results[0]["name"] == "Alice"
@@ -812,7 +812,7 @@ pytest_plugins = []
 # pytest.ini または pyproject.toml
 markers = [
     "unit: Unit tests",
-    "integration: Integration tests", 
+    "integration: Integration tests",
     "e2e: End-to-end tests",
     "slow: Slow running tests",
     "security: Security related tests",
@@ -865,7 +865,7 @@ pytest --cov=backend --cov-report=html --cov-report=term
 source = ["src"]
 omit = [
     "*/tests/*",
-    "*/venv/*", 
+    "*/venv/*",
     "*/__pycache__/*",
     "*/migrations/*",
     "*/scripts/*",
@@ -883,7 +883,7 @@ exclude_lines = [
     "def __repr__",
     "if self.debug:",
     "if settings.DEBUG",
-    "raise AssertionError", 
+    "raise AssertionError",
     "raise NotImplementedError",
     "if 0:",
     "if __name__ == .__main__.:",
@@ -910,86 +910,97 @@ output = "coverage.xml"
 
 ## 🔄 CI/CD統合
 
-### 改良版 GitHub Actions ワークフロー
+### 統合 GitHub Actions ワークフロー
 
 ```yaml
-# .github/workflows/python-ci.yml
+# .github/workflows/python-ci-improved.yml
 name: Python CI
 
 on:
-  push:
-    branches: [main, develop]
   pull_request:
-    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+
+defaults:
+  run:
+    working-directory: backend
 
 jobs:
-  test:
+  python-ci:
+    name: Python CI
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: ["3.13", "3.12"]
-    
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
+
+    permissions:
+      contents: read
+      pull-requests: write
+
     steps:
-    - uses: actions/checkout@v4
-    
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v5
-      with:
-        python-version: ${{ matrix.python-version }}
-    
-    - name: Install uv
-      uses: astral-sh/setup-uv@v6
-    
-    - name: Cache dependencies
-      uses: actions/cache@v3
-      with:
-        path: ~/.cache/uv
-        key: ${{ runner.os }}-uv-${{ hashFiles('**/pyproject.toml') }}
-        restore-keys: |
-          ${{ runner.os }}-uv-
-    
-    - name: Install dependencies
-      run: |
-        uv venv
-        source .venv/bin/activate
-        uv pip install -e ".[dev]"
-    
-    - name: Run pre-commit hooks
-      run: |
-        source .venv/bin/activate
-        pre-commit run --all-files
-    
-    - name: Type check with MyPy
-      run: |
-        source .venv/bin/activate
-        mypy src
-    
-    - name: Security scan with Bandit
-      run: |
-        source .venv/bin/activate
-        bandit -r src/ -f json -o bandit-report.json
-    
-    - name: Run tests with coverage
-      run: |
-        source .venv/bin/activate
-        pytest --cov=backend --cov-report=xml --cov-report=html --junitxml=test-results.xml
-    
-    - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
-      with:
-        file: ./coverage.xml
-        flags: unittests
-        name: codecov-umbrella
-    
-    - name: Upload test results
-      uses: actions/upload-artifact@v4
-      if: always()
-      with:
-        name: test-results-${{ matrix.python-version }}
-        path: |
-          test-results.xml
-          htmlcov/
-          bandit-report.json
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup mise (Python + uv + Hatch)
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+
+      # === 品質チェック ===
+      - name: Install CI environment
+        run: hatch env create ci
+
+      - name: Check code formatting
+        run: hatch run ci:check-format
+
+      - name: Check linting
+        run: hatch run ci:check-lint
+
+      - name: Check type annotations
+        run: hatch run ci:check-types
+
+      - name: Security scan
+        run: hatch run ci:check-security
+
+      # === 統合テスト ===
+      - name: Setup Python 3.13 environment
+        run: hatch env create test.py3.13
+
+      - name: Run parallel tests
+        run: hatch run test.py3.13:run-parallel
+
+      # === mainブランチ限定機能 ===
+      - name: Generate coverage report
+        if: github.ref == 'refs/heads/main'
+        run: hatch run test.py3.13:run-cov
+
+      - name: Create build environment
+        if: github.ref == 'refs/heads/main'
+        run: hatch env create build
+
+      - name: Build package
+        if: github.ref == 'refs/heads/main'
+        run: hatch run build:build
+
+      - name: Check package
+        if: github.ref == 'refs/heads/main'
+        run: hatch run build:check
+
+      - name: Upload artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: backend/dist/*
 ```
 
 ### 依存関係管理とセキュリティ
@@ -1026,7 +1037,7 @@ updates:
     labels:
       - "dependencies"
       - "security"
-    
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
@@ -1052,7 +1063,7 @@ prod = [
 # 開発環境依存関係
 dev = [
     "ruff>=0.5.0",
-    "black>=24.0.0", 
+    "black>=24.0.0",
     "mypy>=1.5.0",
     "pytest>=8.0.0",
     "pytest-cov>=5.0.0",
@@ -1082,11 +1093,11 @@ def profile_function(func):
         pr.enable()
         result = func(*args, **kwargs)
         pr.disable()
-        
+
         stats = pstats.Stats(pr)
         stats.sort_stats('cumulative')
         stats.print_stats(10)
-        
+
         return result
     return wrapper
 
@@ -1111,10 +1122,10 @@ def monitor_memory(func):
         result = func(*args, **kwargs)
         current, peak = tracemalloc.get_traced_memory()
         tracemalloc.stop()
-        
+
         print(f"Current memory usage: {current / 1024 / 1024:.2f} MB")
         print(f"Peak memory usage: {peak / 1024 / 1024:.2f} MB")
-        
+
         return result
     return wrapper
 ```
@@ -1169,7 +1180,7 @@ uv pip install -e ".[dev]"
 
 ---
 
-💡 **開発効率向上のコツ**: 
+💡 **開発効率向上のコツ**:
 - IDEにRuff、Mypyの拡張機能をインストール（Ruffがフォーマットも担当）
 - 保存時の自動フォーマットを有効化
 - pre-commitフックでコミット前の品質チェック

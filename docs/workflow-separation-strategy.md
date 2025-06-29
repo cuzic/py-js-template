@@ -14,7 +14,7 @@ graph TD
     C --> D
     D --> E[自動Issue作成]
     D --> F[アラート通知]
-    
+
     B --> G[基本品質チェック<br/>必須・高速]
     C --> H[詳細品質分析<br/>任意・包括的]
     D --> I[監視・アラート<br/>自動・継続的]
@@ -26,18 +26,16 @@ graph TD
 
 #### **Python CI (Improved)**
 ```yaml
-name: Python CI (Improved)
+name: Python CI
 trigger: backend/変更時
 実行時間: 2-3分
 必須レベル: ★★★ (Branch Protection対象)
 ```
 
 **責任範囲:**
-- ✅ Ruff基本リンティング・フォーマット
-- ✅ MyPy型チェック（エラーのみ）
-- ✅ Banditセキュリティ基本スキャン
-- ✅ pytest基本テスト実行
-- ✅ コードカバレッジ測定
+- ✅ 品質チェック（フォーマット・リンティング・型・セキュリティ）
+- ✅ Python 3.13統合テスト
+- ✅ mainブランチ限定: カバレッジレポート、ビルド、アーティファクト
 
 **設計原則:**
 - **高速実行**: 3分以内完了
@@ -46,7 +44,7 @@ trigger: backend/変更時
 
 #### **JavaScript CI (Improved)**
 ```yaml
-name: JavaScript CI (Improved)  
+name: JavaScript CI (Improved)
 trigger: frontend/変更時
 実行時間: 2-3分
 必須レベル: ★★★ (Branch Protection対象)
@@ -160,7 +158,7 @@ CI失敗 → マージブロック（適切）
 ```yaml
 required_status_checks:
   - "quality-check"      # Python CI
-  - "compatibility-check" # JavaScript CI  
+  - "compatibility-check" # JavaScript CI
   - "test-matrix"        # CI マトリックス
 
 # 品質分析・監視は必須チェック対象外
@@ -240,6 +238,6 @@ on:
 
 ---
 
-**📞 サポート**: DevOpsチーム  
-**📖 関連ドキュメント**: [Pre-commit ガイド](pre-commit-guide.md) | [ワークフロー解説](workflows.md)  
+**📞 サポート**: DevOpsチーム
+**📖 関連ドキュメント**: [Pre-commit ガイド](pre-commit-guide.md) | [ワークフロー解説](workflows.md)
 **🎯 導入計画**: [段階的導入計画](../ROLLOUT-PLAN.md)
