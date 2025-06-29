@@ -1,4 +1,4 @@
-name: Python CI (Improved)
+name: Python CI (Hatch + uv + mise統合)
 
 on:
   pull_request:
@@ -17,7 +17,9 @@ defaults:
     working-directory: backend
 
 jobs:
+  # === 高速品質チェック（必須） ===
   quality-check:
+    name: Quality Check (Lint, Type, Security)
     runs-on: ubuntu-latest
     # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
     # But always run on main branch
@@ -25,46 +27,42 @@ jobs:
       github.ref == 'refs/heads/main' ||
       (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
       (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
-    # 最小権限の原則: 読み取り専用権限のみ
+
     permissions:
       contents: read
       pull-requests: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
-      - name: Setup mise
+
+      - name: Setup mise (Python + uv + Hatch)
         uses: jdx/mise-action@v2
         with:
           version: 2025.6.8
           install: true
           cache: true
           experimental: true
-      
-      # UVはmise経由でPythonと一緒にインストールされる
-      
-      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
-      
-      - name: Install dependencies
-        run: uv sync --all-extras
-      
-      # 検証のみ - 修正は行わない (uv run経由でpipx管理ツール使用)
-      - name: Check formatting with Ruff
-        run: uv run ruff format --check --diff .
-      
-      - name: Check linting with Ruff
-        run: uv run ruff check .
-      
-      - name: Type check with MyPy
-        run: uv run mypy src
-      
-      - name: Security check with Bandit
-        run: uv run bandit -r src/
-      
-      - name: Run tests with pytest
-        run: uv run pytest -v --cov=backend --cov-report=term-missing --cov-report=xml
-      
+
+      # Hatch環境を使用した統合品質チェック
+      - name: Install CI environment
+        run: hatch env create ci
+
+      - name: Check code formatting
+        run: hatch run ci:check-format
+
+      - name: Check linting
+        run: hatch run ci:check-lint
+
+      - name: Check type annotations
+        run: hatch run ci:check-types
+
+      - name: Security scan
+        run: hatch run ci:check-security
+
+      - name: Run basic tests
+        run: hatch run ci:test-ci
+
       - name: Upload coverage reports to Codecov
         if: github.event_name == 'pull_request'
         uses: codecov/codecov-action@v4
@@ -73,7 +71,7 @@ jobs:
           flags: unittests
           name: codecov-umbrella
           fail_ci_if_error: false
-      
+
       - name: Upload coverage reports (artifact)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -83,26 +81,69 @@ jobs:
             backend/coverage.xml
             backend/htmlcov/
 
-
-  # マトリックス戦略でPythonバージョンをテスト
-  test-matrix:
+  # === マトリックステスト（Python複数バージョン） ===
+  matrix-test:
+    name: Test Matrix (Python ${{ matrix.python }})
     runs-on: ubuntu-latest
-    # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
-    # But always run on main branch
     if: |
       github.ref == 'refs/heads/main' ||
       (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
       (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
+
     permissions:
       contents: read
+
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ['3.12', '3.13']
-    
+        python: ['3.12', '3.13']
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
+      - name: Setup mise with Python ${{ matrix.python }}
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
+        env:
+          MISE_PYTHON_VERSION: ${{ matrix.python }}
+
+      # Hatchのマトリックス環境を使用
+      - name: Create test environment for Python ${{ matrix.python }}
+        run: hatch env create test.py${{ matrix.python }}
+
+      - name: Run parallel tests
+        run: hatch run test.py${{ matrix.python }}:run-parallel
+
+      - name: Generate coverage report
+        run: hatch run test.py${{ matrix.python }}:run-cov
+
+      - name: Upload matrix coverage
+        if: matrix.python == '3.13'
+        uses: actions/upload-artifact@v4
+        with:
+          name: matrix-coverage-${{ matrix.python }}
+          path: backend/coverage.xml
+
+  # === パッケージビルドテスト ===
+  build-test:
+    name: Build & Package Test
+    runs-on: ubuntu-latest
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci'))
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Setup mise
         uses: jdx/mise-action@v2
         with:
@@ -110,15 +151,137 @@ jobs:
           install: true
           cache: true
           experimental: true
-      
-      # UVはmise経由でPythonと一緒にインストールされる
-      
-      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
-      
-      - name: Install dependencies
-        working-directory: backend
-        run: uv sync --all-extras
-      
-      - name: Run tests
-        working-directory: backend
-        run: uv run pytest -v
+
+      - name: Create build environment
+        run: hatch env create build
+
+      - name: Clean previous builds
+        run: hatch run build:clean
+
+      - name: Build package
+        run: hatch run build:build
+
+      - name: Check package
+        run: hatch run build:check
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: backend/dist/*
+          retention-days: 30
+
+  # === PyPI公開（mainブランチのみ） ===
+  publish:
+    name: Publish to PyPI
+    needs: [quality-check, matrix-test, build-test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    permissions:
+      contents: read
+      id-token: write  # Trusted Publishersのため
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: python-package
+          path: backend/dist/
+
+      - name: Create build environment
+        run: hatch env create build
+
+      - name: Verify package
+        run: hatch run build:check
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: backend/dist/
+          verify-metadata: true
+          skip-existing: true
+
+  # === 統合レポート ===
+  integration-report:
+    name: Integration Report
+    needs: [quality-check, matrix-test, build-test]
+    runs-on: ubuntu-latest
+    if: always() && github.event_name == 'pull_request'
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup mise
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ./artifacts
+
+      - name: Generate integration report
+        id: report
+        run: |
+          cat << 'EOF' > integration_report.md
+          ## 🔍 Python CI統合レポート
+
+          ### ✅ 実行されたチェック
+          - **品質チェック**: ${{ needs.quality-check.result }}
+          - **マトリックステスト**: ${{ needs.matrix-test.result }}
+          - **ビルドテスト**: ${{ needs.build-test.result }}
+
+          ### 📊 カバレッジレポート
+          カバレッジレポートがアーティファクトとして保存されました。
+
+          ### 📦 ビルド結果
+          パッケージが正常にビルドされ、検証されました。
+
+          ### 🚀 次のステップ
+          - mainブランチへのマージ後、PyPIへの自動公開が実行されます
+          - Trusted Publishersを使用して安全に公開されます
+
+          ---
+          *🤖 Hatch + uv + mise統合CI/CDパイプラインにより生成*
+          EOF
+
+          echo "report_content<<EOF" >> $GITHUB_OUTPUT
+          cat integration_report.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ steps.report.outputs.report_content }}`
+            });

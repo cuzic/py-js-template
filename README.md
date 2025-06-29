@@ -8,9 +8,9 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
 
 ### 🐍 **モダンなPythonバックエンド**
 - **Python 3.13+** 型ヒントと厳密なmypyチェック対応
-- **UVパッケージマネージャー** ロックファイル対応の高速依存関係管理
+- **Hatch + UVパッケージマネージャー** 環境分離・高速依存関係管理・PyPI自動公開
 - **Ruff** 高速リンティング・フォーマット（Black、Flake8、isortを統合）
-- **Pytest** 非同期対応・BDDスタイルテスト
+- **Pytest** 非同期対応・並列実行・BDDスタイルテスト
 - **プロトコルベースアーキテクチャ** 依存性注入とテスト容易性
 - **包括的エラーハンドリング** カスタム例外クラス
 
@@ -131,9 +131,9 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
 
 > **mise統合ツール管理**: このプロジェクトは`mise.toml`で全ての開発ツールを管理：
 > - **ランタイム**: Python 3.13.5、Node.js 20.11.0、Bun 1.1.42
-> - **Pythonツール**: Black、Ruff、MyPy、pytest、Bandit（pipx経由）
+> - **Pythonツール**: **Hatch**、Black、Ruff、MyPy、pytest、Bandit（pipx経由）
 > - **JS/TSツール**: TypeScript、ESLint、Prettier、Vite（mise経由bunでインストール）
-> - **その他ツール**: GitHub CLI、uvパッケージマネージャー
+> - **パッケージマネージャー**: **uv**（Python）、GitHub CLI
 >
 > **ツール管理ルール**:
 > - ✅ PATH設定なしで`mise exec -- <tool>`を使用
@@ -162,10 +162,39 @@ mise exec -- pre-commit run prettier
 ```
 
 ### Pythonバックエンド
+
+#### 🚀 Hatch統合コマンド（推奨）
 ```bash
 cd backend
 
-# 品質チェック（mise管理ツール経由）
+# === 開発環境（デフォルト） ===
+hatch run lint              # 全品質チェック（リント・フォーマット・型チェック）
+hatch run lint-fix          # 自動修正
+hatch run test              # テスト実行（カバレッジ付き）
+hatch run security          # セキュリティスキャン
+hatch run all-checks        # 全チェック実行
+
+# === CI/CD環境（高速） ===
+hatch run ci:check-format   # フォーマットチェック
+hatch run ci:check-lint     # リントチェック
+hatch run ci:check-types    # 型チェック
+hatch run ci:test-parallel  # 並列テスト実行
+
+# === マトリックステスト ===
+hatch run test.py3.13:run   # Python 3.13でテスト
+hatch run test.py3.12:run   # Python 3.12でテスト
+
+# === パッケージビルド ===
+hatch run build:clean       # ビルドクリーンアップ
+hatch run build:build       # パッケージビルド
+hatch run build:check       # パッケージ検証
+```
+
+#### ⚡ 直接コマンド（従来方式）
+```bash
+cd backend
+
+# 品質チェック（uv経由）
 uv run ruff check .          # コードリント
 uv run ruff format .         # コードフォーマット
 uv run mypy src             # 型チェック
@@ -173,7 +202,6 @@ uv run bandit -r src/       # セキュリティスキャン
 
 # 代替: mise直接実行
 mise exec -- ruff check backend/
-mise exec -- black backend/src/
 mise exec -- mypy backend/src/
 
 # テスト
@@ -233,12 +261,14 @@ bun run test:watch        # ウォッチモード
 このテンプレートは最適なパフォーマンスと保守性のため**3層ワークフローアーキテクチャ**を実装：
 
 ### **第1層: CI専用ワークフロー** - 高速・必須（2-3分）
-#### 🐍 Python CI (`python-ci-improved.yml`)
+#### 🐍 Python CI (`python-ci-improved.yml`) - **Hatch + uv + mise統合**
 - **ブランチ保護必須** - 失敗時マージブロック
-- Ruff基本リンティング・フォーマット
-- MyPy基本型チェック
-- Banditセキュリティスキャン
-- Pytestカバレッジレポート付き
+- **Hatch環境管理** - CI専用環境で高速チェック
+- **マトリックステスト** - Python 3.12 & 3.13並列実行
+- **パッケージビルド** - 自動ビルド・検証・アーティファクト保存
+- **PyPI自動公開** - mainブランチ時のTrusted Publishers使用
+- **統合レポート** - PR統合結果の自動コメント
+- **積極的キャッシュ** - mise/Hatch環境とuv依存関係
 
 #### 📜 JavaScript CI (`js-ci-improved.yml`)
 - **ブランチ保護必須** - 失敗時マージブロック
@@ -347,6 +377,9 @@ DevContainerは以下のサービスで拡張可能：
 ## 🎯 プロダクションデプロイ
 
 ### バックエンドデプロイチェックリスト
+- [ ] **Hatchパッケージビルド**: `hatch run build:build`
+- [ ] **パッケージ検証**: `hatch run build:check`
+- [ ] **PyPI公開設定**: Trusted Publishers環境設定
 - [ ] データベースURL環境変数設定
 - [ ] 適切なログレベル設定
 - [ ] ヘルスチェックエンドポイント設定

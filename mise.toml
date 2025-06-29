@@ -11,6 +11,7 @@ bun = "1.1.42"
 uv = "latest"        # Python パッケージマネージャー
 
 # === Python 開発ツール ===
+"pipx:hatch" = "latest"      # Python プロジェクト管理・パッケージビルド
 "pipx:black" = "latest"      # コードフォーマッター
 "pipx:ruff" = "latest"       # 高速リンター・フォーマッター
 "pipx:mypy" = "latest"       # 静的型チェッカー
@@ -33,3 +34,9 @@ github-cli = "latest"        # GitHub CLI
 [settings]
 # idiomatic version files の設定を明示化
 idiomatic_version_file_enable_tools = ["node"]
+
+# Bunをnpmバックエンドとして使用（高速インストール）
+npm.bun = true
+
+# Hatch環境の統合設定
+experimental = true  # Hatchの新機能を有効化

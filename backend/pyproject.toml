@@ -33,30 +33,30 @@ target-version = "py313"
 select = [
     # Core error detection
     "E",    # pycodestyle errors
-    "W",    # pycodestyle warnings  
+    "W",    # pycodestyle warnings
     "F",    # pyflakes
-    
+
     # Import management
     "I",    # isort
     "TID",  # flake8-tidy-imports
     "ICN",  # flake8-import-conventions
-    
+
     # Code modernization
     "UP",   # pyupgrade
     "FA",   # flake8-future-annotations
-    
+
     # Bug detection
     "B",    # flake8-bugbear
     "A",    # flake8-builtins
     "C4",   # flake8-comprehensions
     "DTZ",  # flake8-datetimez
     "T10",  # flake8-debugger
-    
+
     # Error handling
     "EM",   # flake8-errmsg
     "RSE",  # flake8-raise
     "TRY",  # tryceratops
-    
+
     # Code quality
     "SIM",  # flake8-simplify
     "PIE",  # flake8-pie
@@ -64,39 +64,39 @@ select = [
     "PTH",  # flake8-use-pathlib
     "ERA",  # eradicate
     "PGH",  # pygrep-hooks
-    
+
     # String handling
     "ISC",  # flake8-implicit-str-concat
     "G",    # flake8-logging-format
     "Q",    # flake8-quotes
     "FLY",  # flynt
-    
+
     # Testing
     "PT",   # flake8-pytest-style
     "T20",  # flake8-print
-    
+
     # Type checking
     "TCH",  # flake8-type-checking
     "ANN",  # flake8-annotations
-    
+
     # Security
     "S",    # flake8-bandit
-    
+
     # Documentation
     "D",    # pydocstyle
-    
+
     # Performance
     "PERF", # Perflint
-    
+
     # NumPy
     "NPY",  # NumPy-specific rules
-    
+
     # Pylint
     "PL",   # Pylint
-    
+
     # Ruff-specific
     "RUF",  # Ruff-specific rules
-    
+
     # 2025 additions
     "ARG",  # flake8-unused-arguments
     "FBT",  # flake8-boolean-trap
@@ -154,17 +154,100 @@ docstring-code-line-length = "dynamic"
 [tool.hatch.build.targets.wheel]
 packages = ["src/backend"]
 
-[tool.hatch.scripts]
-# 2025 Unified Ruff commands
+# === Hatch環境設定 - 2025年ベストプラクティス ===
+[tool.hatch.envs.default]
+# デフォルト開発環境
+dependencies = [
+  "ruff>=0.8.0",
+  "mypy>=1.15.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.11.0",
+  "pytest-xdist>=3.3.0",
+  "bandit>=1.7.5",
+]
+
+[tool.hatch.envs.default.scripts]
+# 基本的な開発コマンド
 lint = "ruff check . && ruff format --check . && mypy src"
 lint-fix = "ruff check --fix . && ruff format ."
 format = "ruff format ."
 format-check = "ruff format --check ."
 type-check = "mypy src"
 security = "bandit -r src/"
-test = "pytest --cov=backend --cov-report=html"
+test = "pytest --cov=backend --cov-report=html --cov-report=term-missing"
 test-fast = "pytest -x"
+test-verbose = "pytest -v --cov=backend --cov-report=html --cov-report=term-missing --cov-report=xml"
 all-checks = "hatch run lint && hatch run security && hatch run test"
+
+# === CI/CD専用環境 ===
+[tool.hatch.envs.ci]
+# CI環境（最小限の依存関係）
+dependencies = [
+  "ruff>=0.8.0",
+  "mypy>=1.15.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-xdist>=3.3.0",
+  "bandit>=1.7.5",
+]
+
+[tool.hatch.envs.ci.scripts]
+# CI専用の高速チェック
+check-format = "ruff format --check --diff ."
+check-lint = "ruff check ."
+check-types = "mypy src"
+check-security = "bandit -r src/"
+test-ci = "pytest -v --cov=backend --cov-report=xml --cov-report=term-missing"
+# 並列実行対応
+test-parallel = "pytest -n auto --cov=backend --cov-report=xml --cov-report=term-missing"
+
+# === テスト専用環境 ===
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.11.0",
+  "pytest-xdist>=3.3.0",
+  "pytest-benchmark>=4.0.0",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.12", "3.13"]
+
+[tool.hatch.envs.test.scripts]
+# マトリックステスト用
+run = "pytest -v"
+run-parallel = "pytest -n auto"
+run-cov = "pytest --cov=backend --cov-report=xml"
+run-bench = "pytest --benchmark-only"
+
+# === ビルド・デプロイ環境 ===
+[tool.hatch.envs.build]
+detached = true  # プロジェクト依存関係から独立
+dependencies = ["build", "twine", "wheel"]
+
+[tool.hatch.envs.build.scripts]
+# パッケージビルド・公開
+build = "python -m build"
+check = "twine check dist/*"
+upload-test = "twine upload --repository testpypi dist/*"
+upload = "twine upload dist/*"
+clean = "rm -rf dist/ build/ *.egg-info/"
+
+# === ドキュメント環境（オプション） ===
+[tool.hatch.envs.docs]
+detached = true
+dependencies = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build"
+serve = "mkdocs serve"
+deploy = "mkdocs gh-deploy"
+
 
 [tool.mypy]
 python_version = "3.13"
@@ -244,4 +327,3 @@ markers = [
     "slow: Slow running tests",
     "security: Security related tests",
 ]
-
