@@ -1,0 +1,143 @@
+{
+  "name": "Universal Dev Container with mise",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {},
+    "ghcr.io/jdx/mise/mise:1": {
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  },
+
+  // Configure tool-specific properties
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // Python settings (using mise-managed tools)
+        "python.defaultInterpreterPath": "${workspaceFolder}/backend/.venv/bin/python",
+        "python.terminal.activateEnvironment": true,
+        "python.linting.enabled": true,
+        "python.linting.ruffEnabled": true,
+        "python.linting.ruffPath": "/home/vscode/.local/share/mise/shims/ruff",
+        "python.formatting.provider": "none",
+        "python.testing.pytestEnabled": true,
+        "python.testing.pytestArgs": ["tests"],
+        
+        // JavaScript/TypeScript settings
+        "typescript.preferences.quoteStyle": "double",
+        "javascript.preferences.quoteStyle": "double",
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.formatOnSave": true,
+        "editor.codeActionsOnSave": {
+          "source.fixAll.eslint": "explicit",
+          "source.organizeImports": "explicit"
+        },
+        
+        // General editor settings
+        "editor.tabSize": 2,
+        "editor.insertSpaces": true,
+        "editor.rulers": [88, 120],
+        "files.trimTrailingWhitespace": true,
+        "files.insertFinalNewline": true,
+        "files.trimFinalNewlines": true,
+        
+        // Terminal settings
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.profiles.linux": {
+          "bash": {
+            "path": "/bin/bash",
+            "args": []
+          }
+        }
+      },
+      
+      "extensions": [
+        // Python extensions
+        "ms-python.python",
+        "ms-python.ruff",
+        "ms-python.mypy-type-checker",
+        "ms-python.debugpy",
+        
+        // JavaScript/TypeScript extensions
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "bradlc.vscode-tailwindcss",
+        "ms-vscode.vscode-typescript-next",
+        
+        // React/Frontend extensions
+        "ms-vscode.vscode-react-native",
+        "formulahendry.auto-rename-tag",
+        "ms-vscode.vscode-json",
+        
+        // Testing extensions
+        "hbenl.vscode-test-explorer",
+        
+        // Git and productivity extensions
+        "eamodio.gitlens",
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-vscode.remote-containers",
+        
+        // Docker and DevOps
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        
+        // General productivity
+        "ms-vscode.vscode-todo-highlight",
+        "oderwat.indent-rainbow",
+        "christian-kohler.path-intellisense",
+        "streetsidesoftware.code-spell-checker"
+      ]
+    }
+  },
+
+  // Use 'forwardPorts' to make a list of ports inside the container available locally
+  "forwardPorts": [
+    3000,  // Frontend development server
+    8000,  // Backend development server
+    5173,  // Vite dev server
+    8080   // Alternative dev server
+  ],
+
+  // Port attributes
+  "portsAttributes": {
+    "3000": {
+      "label": "Frontend (React)",
+      "onAutoForward": "notify"
+    },
+    "8000": {
+      "label": "Backend (Python)",
+      "onAutoForward": "notify"
+    },
+    "5173": {
+      "label": "Vite Dev Server",
+      "onAutoForward": "notify"
+    }
+  },
+
+  // Commands to run after the container is created
+  "postCreateCommand": "chmod +x .devcontainer/*.sh && mise trust -- --non-interactive && bash .devcontainer/setup.sh",
+
+  // Commands to run when starting the container
+  "postStartCommand": "bash .devcontainer/post-start.sh",
+
+  // Set environment variables
+  "containerEnv": {
+    "NODE_ENV": "development",
+    "PYTHON_ENV": "development"
+  },
+
+  // Configure volumes
+  "mounts": [
+    // Mount mise data for persistence
+    "source=mise-data,target=/home/vscode/.local/share/mise,type=volume",
+    // Mount mise cache for better performance  
+    "source=mise-cache,target=/home/vscode/.cache/mise,type=volume"
+    // Git config and SSH keys are handled by the devcontainer feature
+  ],
+
+  // Run as non-root user
+  "remoteUser": "vscode"
+}

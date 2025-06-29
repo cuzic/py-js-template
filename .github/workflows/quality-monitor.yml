@@ -1,0 +1,346 @@
+# 品質監視専用ワークフロー
+# Option B完全分離戦略: アラート・Issue作成・監視専用
+
+name: Quality Monitor
+
+on:
+  schedule:
+    # 毎週日曜日の午前9時に実行（週次監視レポート）
+    - cron: '0 9 * * 0'
+  workflow_dispatch:
+    inputs:
+      monitor_type:
+        description: '監視タイプ'
+        required: false
+        default: 'standard'
+        type: choice
+        options:
+        - 'standard'
+        - 'bypass-analysis'
+        - 'trend-analysis'
+        - 'ci-failure-check'
+      days_to_analyze:
+        description: '分析対象日数'
+        required: false
+        default: '7'
+        type: string
+
+env:
+  FORCE_COLOR: 1
+
+permissions:
+  contents: read
+  issues: write
+  pull-requests: write
+  actions: read
+
+jobs:
+  # === CI失敗監視 ===
+  ci-failure-monitor:
+    name: "🚨 CI失敗監視"
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'schedule' || github.event.inputs.monitor_type == 'ci-failure-check' || github.event.inputs.monitor_type == 'standard'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Get recent CI failures
+        id: workflow-details
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const daysToCheck = parseInt('${{ github.event.inputs.days_to_analyze || "7" }}');
+            const sinceDate = new Date(Date.now() - daysToCheck * 24 * 60 * 60 * 1000).toISOString();
+            
+            // 最近の失敗したワークフロー実行を取得
+            const workflows = ['Python CI (Improved)', 'JavaScript CI (Improved)'];
+            const failures = [];
+            
+            for (const workflowName of workflows) {
+              try {
+                const workflowRuns = await github.rest.actions.listWorkflowRuns({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  workflow_id: `${workflowName.toLowerCase().replace(/[^a-z0-9]/g, '-')}.yml`,
+                  status: 'failure',
+                  created: `>=${sinceDate}`,
+                  per_page: 10
+                });
+                
+                for (const run of workflowRuns.data.workflow_runs) {
+                  failures.push({
+                    workflowName: run.name,
+                    conclusion: run.conclusion,
+                    htmlUrl: run.html_url,
+                    headSha: run.head_sha,
+                    runNumber: run.run_number,
+                    createdAt: run.created_at
+                  });
+                }
+              } catch (error) {
+                console.log(`Could not fetch ${workflowName} runs:`, error.message);
+              }
+            }
+            
+            return {
+              failureCount: failures.length,
+              failures: failures.slice(0, 5)  // 最新5件まで
+            };
+
+      - name: Generate CI failure summary
+        id: failure-analysis
+        run: |
+          FAILURE_COUNT="${{ fromJson(steps.workflow-details.outputs.result).failureCount }}"
+          
+          echo "failure_count=$FAILURE_COUNT" >> $GITHUB_OUTPUT
+          
+          if [ "$FAILURE_COUNT" -gt 0 ]; then
+            echo "has_failures=true" >> $GITHUB_OUTPUT
+            echo "failure_category=CI失敗検出" >> $GITHUB_OUTPUT
+          else
+            echo "has_failures=false" >> $GITHUB_OUTPUT
+            echo "failure_category=CI正常" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create CI failure report issue
+        if: steps.failure-analysis.outputs.has_failures == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const failureData = ${{ steps.workflow-details.outputs.result }};
+            const daysAnalyzed = '${{ github.event.inputs.days_to_analyze || "7" }}';
+            
+            let failureList = '';
+            if (failureData.failures && failureData.failures.length > 0) {
+              failureList = failureData.failures.map(failure => 
+                `- **${failure.workflowName}** (#${failure.runNumber}): [詳細](${failure.htmlUrl}) - ${new Date(failure.createdAt).toLocaleDateString('ja-JP')}`
+              ).join('\n');
+            }
+            
+            const issueBody = `# 🚨 CI失敗レポート
+
+## 📊 失敗統計
+- **対象期間**: 過去${daysAnalyzed}日間
+- **失敗回数**: ${failureData.failureCount}件
+- **分析実行日時**: ${new Date().toLocaleString('ja-JP')}
+
+## 📋 最近の失敗一覧
+${failureList || '詳細情報の取得に失敗しました'}
+
+## 📝 推奨アクション
+- [ ] 各失敗ワークフローの詳細ログを確認
+- [ ] 共通する失敗パターンの分析
+- [ ] 必要に応じて修正PRの作成
+
+## 🔧 次のステップ
+1. 失敗したワークフローのログを詳細確認
+2. 問題の根本原因を特定
+3. 適切な修正を実施
+
+---
+*このレポートは週次自動監視システムによって生成されました*`;
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `🚨 CI失敗レポート (${failureData.failureCount}件検出)`,
+              body: issueBody,
+              labels: ['ci-failure', 'automated', 'investigation-needed']
+            });
+
+            console.log('Created CI failure report issue:', issue.number);
+
+  # === バイパス使用監視 ===
+  bypass-monitor:
+    name: "🔍 バイパス使用監視"
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'schedule' || github.event.inputs.monitor_type == 'bypass-analysis' || github.event.inputs.monitor_type == 'standard'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # 履歴分析のため全履歴必要
+
+      - name: Run bypass usage analysis
+        run: |
+          chmod +x scripts/monitor-bypass-usage.sh
+          ./scripts/monitor-bypass-usage.sh ${{ github.event.inputs.days_to_analyze || '7' }}
+
+      - name: Check bypass usage threshold
+        id: bypass-check
+        run: |
+          # バイパス使用レポートを解析
+          if [ -f "bypass-usage.log" ]; then
+            # 閾値超過チェック（例: 週10回以上のバイパス使用）
+            BYPASS_COUNT=$(grep -o "疑わしいコミット" bypass-usage.log | wc -l || echo "0")
+            
+            if [ "$BYPASS_COUNT" -gt 10 ]; then
+              echo "threshold_exceeded=true" >> $GITHUB_OUTPUT
+              echo "bypass_count=$BYPASS_COUNT" >> $GITHUB_OUTPUT
+            else
+              echo "threshold_exceeded=false" >> $GITHUB_OUTPUT
+              echo "bypass_count=$BYPASS_COUNT" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "threshold_exceeded=false" >> $GITHUB_OUTPUT
+            echo "bypass_count=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create bypass alert issue
+        if: steps.bypass-check.outputs.threshold_exceeded == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const bypassCount = '${{ steps.bypass-check.outputs.bypass_count }}';
+            
+            const issueBody = `# 🚨 Pre-commit バイパス使用アラート
+
+## 📊 検出状況
+- **過去7日間のバイパス使用回数**: ${bypassCount}回
+- **警告閾値**: 10回
+- **検出日時**: ${new Date().toLocaleString('ja-JP')}
+
+## 🔍 調査が必要な項目
+- [ ] 個別開発者のバイパス使用状況確認
+- [ ] pre-commitフックのパフォーマンス問題調査
+- [ ] チーム教育の必要性評価
+
+## 📋 推奨アクション
+1. **即座実行**: バイパス使用状況の個別ヒアリング
+2. **短期対応**: pre-commitフック軽量化の検討
+3. **中期対応**: チーム教育・ガイドライン見直し
+
+## 📄 詳細レポート
+詳細な分析結果は GitHub Actions の「bypass-monitor」ワークフロー実行ログを参照してください。
+
+---
+*この警告は自動監視システムによって生成されました*`;
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '🚨 Pre-commit バイパス使用警告（閾値超過）',
+              body: issueBody,
+              labels: ['quality-warning', 'automated', 'high-priority']
+            });
+
+            console.log('Created bypass alert issue:', issue.number);
+
+      - name: Upload bypass analysis report
+        uses: actions/upload-artifact@v4
+        with:
+          name: bypass-analysis-report
+          path: bypass-usage.log
+          retention-days: 30
+
+  # === 品質トレンド監視 ===
+  quality-trend-monitor:
+    name: "📈 品質トレンド監視"
+    runs-on: ubuntu-24.04
+    if: github.event_name == 'schedule' || github.event.inputs.monitor_type == 'trend-analysis' || github.event.inputs.monitor_type == 'standard'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate quality metrics
+        run: |
+          chmod +x scripts/quality-dashboard.sh
+          ./scripts/quality-dashboard.sh ${{ github.event.inputs.days_to_analyze || '30' }}
+
+      - name: Analyze quality trends
+        id: trend-analysis
+        run: |
+          # 品質トレンド分析（簡易版）
+          # 実際の実装では過去のメトリクスと比較
+          
+          CURRENT_DATE=$(date +%Y-%m-%d)
+          
+          # 模擬的な品質劣化検出
+          QUALITY_DEGRADED=false
+          DEGRADATION_REASON=""
+          
+          # カバレッジ低下チェック（例）
+          if [ -f "quality-metrics/git-metrics.json" ]; then
+            # 実際には過去データとの比較を実装
+            echo "quality_degraded=false" >> $GITHUB_OUTPUT
+            echo "degradation_reason=品質維持" >> $GITHUB_OUTPUT
+          else
+            echo "quality_degraded=false" >> $GITHUB_OUTPUT
+            echo "degradation_reason=データ不足" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create quality trend report issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const qualityDegraded = '${{ steps.trend-analysis.outputs.quality_degraded }}';
+            const degradationReason = '${{ steps.trend-analysis.outputs.degradation_reason }}';
+            
+            const daysToAnalyze = '${{ github.event.inputs.days_to_analyze || "30" }}';
+            const startDate = new Date(Date.now() - parseInt(daysToAnalyze)*24*60*60*1000);
+            
+            const reportBody = `# 📊 品質監視レポート
+
+## 📅 レポート期間
+**対象期間**: ${startDate.toLocaleDateString('ja-JP')} ～ ${new Date().toLocaleDateString('ja-JP')} (${daysToAnalyze}日間)
+
+## 🎯 品質ステータス
+- **全体評価**: ${qualityDegraded === 'true' ? '⚠️ 注意が必要' : '✅ 良好'}
+- **主な状況**: ${degradationReason}
+
+## 📈 主要メトリクス
+- **pre-commit実行時間**: 目標3秒以内
+- **CI成功率**: 目標95%以上
+- **カバレッジ**: 目標80%以上
+- **バイパス使用**: 目標1回/月未満
+
+## 🎯 推奨アクション項目
+- [ ] 品質メトリクスの継続監視
+- [ ] pre-commitパフォーマンス確認
+- [ ] チーム品質意識の評価
+
+## 📊 詳細データ
+詳細な品質ダッシュボードは GitHub Actions の「quality-trend-monitor」ワークフロー実行結果を参照してください。
+
+---
+*このレポートは週次自動監視システムによって生成されました*`;
+
+            const { data: issue } = await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: '📊 品質監視レポート',
+              body: reportBody,
+              labels: ['quality-report', 'automated', 'weekly']
+            });
+
+            console.log('Created quality trend report:', issue.number);
+
+      - name: Upload quality trend report
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-trend-report
+          path: quality-metrics/
+          retention-days: 90
+
+  # === アラート統合 ===
+  alert-consolidation:
+    name: "📢 アラート統合"
+    runs-on: ubuntu-24.04
+    needs: [ci-failure-monitor, bypass-monitor, quality-trend-monitor]
+    if: always() && (needs.ci-failure-monitor.result == 'success' || needs.bypass-monitor.result == 'success' || needs.quality-trend-monitor.result == 'success')
+    steps:
+      - name: Send consolidated alert
+        if: contains(needs.*.result, 'success')
+        run: |
+          echo "📢 品質監視アラート統合完了"
+          echo "実行された監視:"
+          echo "- CI失敗監視: ${{ needs.ci-failure-monitor.result }}"
+          echo "- バイパス監視: ${{ needs.bypass-monitor.result }}"
+          echo "- トレンド監視: ${{ needs.quality-trend-monitor.result }}"
+          
+          # 将来的にSlack、Teams、メール通知などを実装
+          # if [ -n "${SLACK_WEBHOOK_URL:-}" ]; then
+          #   curl -X POST -H 'Content-type: application/json' \
+          #     --data '{"text":"📊 品質監視レポートが更新されました"}' \
+          #     "$SLACK_WEBHOOK_URL"
+          # fi

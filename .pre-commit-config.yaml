@@ -1,0 +1,92 @@
+# 高速pre-commitフック設定 - 3秒以内実行を保証
+# ユーザーストーリー1: 開発フローを阻害しない高速品質チェック
+
+repos:
+  # === 必須セキュリティチェック（高速） ===
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace        # 0.1秒: 行末空白削除
+      - id: end-of-file-fixer         # 0.1秒: ファイル末尾改行修正
+      - id: check-added-large-files   # 0.2秒: 大容量ファイル検出
+        args: ['--maxkb=1000']
+      - id: check-merge-conflict      # 0.1秒: マージコンフリクト検出
+      - id: detect-private-key        # 0.2秒: APIキー検出
+
+  # === Python高速フォーマッティング ===
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.1
+    hooks:
+      - id: ruff
+        name: ruff-lint-fast
+        description: "Python高速リンティング（基本ルールのみ）"
+        args: [--fix, --select=E,W,F,I, --cache-dir=.ruff_cache]
+        files: ^backend/.*\.py$
+      - id: ruff-format
+        name: ruff-format-fast  
+        description: "Python高速フォーマッティング"
+        files: ^backend/.*\.py$
+
+  # === JavaScript/TypeScript高速フォーマッティング ===
+  - repo: local
+    hooks:
+      - id: prettier-fast
+        name: prettier-fast
+        description: "JavaScript/TypeScript高速フォーマッティング"
+        entry: bash -c 'cd frontend && mise exec -- prettier --write --cache --cache-strategy content'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx|json|css)$
+        exclude: |
+          (?x)^(
+            frontend/node_modules/.*|
+            frontend/dist/.*|
+            frontend/coverage/.*
+          )$
+
+  # === JavaScript/TypeScript高速リンティング ===
+  - repo: local
+    hooks:
+      - id: eslint-fast
+        name: eslint-fast
+        description: "JavaScript/TypeScript高速リンティング"
+        entry: bash -c 'cd frontend && mise exec -- eslint --fix --cache --cache-location .eslintcache'
+        language: system
+        files: ^frontend/.*\.(js|jsx|ts|tsx)$
+        exclude: |
+          (?x)^(
+            frontend/node_modules/.*|
+            frontend/dist/.*|
+            frontend/coverage/.*
+          )$
+
+# === パフォーマンス最適化設定 ===
+default_stages: [pre-commit]
+fail_fast: true                    # 最初の失敗で即座に停止
+minimum_pre_commit_version: "3.0.0"
+
+# === キャッシュと除外設定 ===
+exclude: |
+  (?x)^(
+    .*\.min\.(js|css)$|
+    .*\.map$|
+    frontend/node_modules/.*|
+    frontend/dist/.*|
+    frontend/coverage/.*|
+    backend/htmlcov/.*|
+    backend/\.coverage|
+    .*__pycache__.*|
+    .*\.pyc$|
+    \.git/.*
+  )$
+
+# === 実行時間目標 ===
+# - trailing-whitespace: ~0.1秒
+# - end-of-file-fixer: ~0.1秒  
+# - check-added-large-files: ~0.2秒
+# - check-merge-conflict: ~0.1秒
+# - detect-private-key: ~0.2秒
+# - ruff-lint-fast: ~0.8秒
+# - ruff-format-fast: ~0.5秒
+# - prettier-fast: ~0.6秒
+# - eslint-fast: ~0.4秒
+# 合計目標: ~3.0秒

@@ -1,0 +1,157 @@
+name: Python CI
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'backend/**'
+      - '.github/workflows/python-ci-improved.yml'
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  # === 統合CI (全てのチェックを1つのジョブで実行) ===
+  python-ci:
+    name: Python CI
+    runs-on: ubuntu-latest
+    # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
+    # But always run on main branch
+    if: |
+      github.ref == 'refs/heads/main' ||
+      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
+      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
+
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup mise (Python + uv + Hatch)
+        uses: jdx/mise-action@v2
+        with:
+          version: 2025.6.8
+          install: true
+          cache: true
+          experimental: true
+
+      # === Quality Check (Lint, Type, Security) ===
+      - name: Install CI environment
+        run: hatch env create ci
+
+      - name: Check code formatting
+        run: hatch run ci:check-format
+
+      - name: Check linting
+        run: hatch run ci:check-lint
+
+      - name: Check type annotations
+        run: hatch run ci:check-types
+
+      - name: Security scan
+        run: hatch run ci:check-security
+
+      # === Integration Test (Python 3.13) ===
+      - name: Setup Python 3.13 environment
+        env:
+          MISE_PYTHON_VERSION: '3.13'
+        run: hatch env create test.py3.13
+
+      - name: Run parallel tests
+        run: hatch run test.py3.13:run-parallel
+
+      - name: Generate coverage report
+        if: github.ref == 'refs/heads/main'
+        run: hatch run test.py3.13:run-cov
+
+      # === Build & Package Test ===
+      - name: Create build environment
+        if: github.ref == 'refs/heads/main'
+        run: hatch env create build
+
+      - name: Clean previous builds
+        if: github.ref == 'refs/heads/main'
+        run: hatch run build:clean
+
+      - name: Build package
+        if: github.ref == 'refs/heads/main'
+        run: hatch run build:build
+
+      - name: Check package
+        if: github.ref == 'refs/heads/main'
+        run: hatch run build:check
+
+      # === Upload Artifacts ===
+      - name: Upload coverage reports to Codecov
+        if: github.ref == 'refs/heads/main'
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./backend/coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+      - name: Upload coverage reports (artifact)
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-coverage-report
+          path: |
+            backend/coverage.xml
+            backend/htmlcov/
+
+      - name: Upload build artifacts
+        if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-package
+          path: backend/dist/*
+          retention-days: 30
+
+      # === Integration Report ===
+      - name: Generate integration report
+        if: github.event_name == 'pull_request'
+        id: report
+        run: |
+          cat << 'EOF' > integration_report.md
+          ## 🔍 Python CI統合レポート
+
+          ### ✅ 実行されたチェック
+          - **品質チェック**: ✅ 完了
+            - コードフォーマット
+            - リンティング
+            - 型チェック
+            - セキュリティスキャン
+          - **統合テスト**: ✅ 完了
+            - Python 3.13での並列テスト
+
+          ${{ github.ref == 'refs/heads/main' && '### 📊 カバレッジレポート\nカバレッジレポートがアーティファクトとして保存されました。\n\n### 📦 ビルド結果\nパッケージが正常にビルドされ、検証されました。' || '### ℹ️ 注意\nカバレッジ生成、ビルド、アーティファクトのアップロードはmainブランチでのみ実行されます。' }}
+
+          ---
+          *🤖 Python CI パイプラインにより生成*
+          EOF
+
+          echo "report_content<<EOF" >> $GITHUB_OUTPUT
+          cat integration_report.md >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Comment PR with report
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `${{ steps.report.outputs.report_content }}`
+            });

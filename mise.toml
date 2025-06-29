@@ -1,0 +1,42 @@
+# mise統一ツール管理 - 2025年ベストプラクティス
+# 全ての開発ツールを mise で統一管理し、重複インストールを排除
+
+[tools]
+# === ランタイム ===
+python = "3.13.5"
+node = "20.11.0"
+bun = "1.1.42"
+
+# === パッケージマネージャー ===
+uv = "latest"        # Python パッケージマネージャー
+
+# === Python 開発ツール ===
+"pipx:hatch" = "latest"      # Python プロジェクト管理・パッケージビルド
+"pipx:black" = "latest"      # コードフォーマッター
+"pipx:ruff" = "latest"       # 高速リンター・フォーマッター
+"pipx:mypy" = "latest"       # 静的型チェッカー
+"pipx:pytest" = "latest"     # テストフレームワーク
+"pipx:bandit" = "latest"     # セキュリティ検査
+"pipx:pre-commit" = "latest" # Git pre-commit フック管理
+
+# === JavaScript/TypeScript 開発ツール ===
+# 注: mise は npm: プレフィックスを使用してグローバルツールをインストール
+# npm.bun=true 設定により、実際には bun が高速インストールに使用される
+"npm:typescript" = "latest"  # TypeScript コンパイラー
+"npm:eslint" = "latest"      # JavaScript リンター
+"npm:prettier" = "latest"    # コードフォーマッター
+"npm:vite" = "latest"       # モダンビルドツール
+
+# === 汎用開発ツール ===
+github-cli = "latest"        # GitHub CLI
+
+# === 設定 ===
+[settings]
+# idiomatic version files の設定を明示化
+idiomatic_version_file_enable_tools = ["node"]
+
+# Bunをnpmバックエンドとして使用（高速インストール）
+npm.bun = true
+
+# Hatch環境の統合設定
+experimental = true  # Hatchの新機能を有効化

@@ -1,0 +1,329 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "backend"
+version = "0.1.0"
+description = "Modern Python backend template"
+requires-python = ">=3.13"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.8.0",
+    "mypy>=1.15.0",
+    "pytest>=8.0.0",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+    "pytest-mock>=3.11.0",
+    "pytest-xdist>=3.3.0",
+    "bandit>=1.7.5",
+    "pre-commit>=3.3.0",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+# 2025 Best Practice: Unified linter + formatter
+# Replaces Black, Flake8, isort, and more
+
+[tool.ruff.lint]
+# 2025 Comprehensive rule selection
+select = [
+    # Core error detection
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+
+    # Import management
+    "I",    # isort
+    "TID",  # flake8-tidy-imports
+    "ICN",  # flake8-import-conventions
+
+    # Code modernization
+    "UP",   # pyupgrade
+    "FA",   # flake8-future-annotations
+
+    # Bug detection
+    "B",    # flake8-bugbear
+    "A",    # flake8-builtins
+    "C4",   # flake8-comprehensions
+    "DTZ",  # flake8-datetimez
+    "T10",  # flake8-debugger
+
+    # Error handling
+    "EM",   # flake8-errmsg
+    "RSE",  # flake8-raise
+    "TRY",  # tryceratops
+
+    # Code quality
+    "SIM",  # flake8-simplify
+    "PIE",  # flake8-pie
+    "RET",  # flake8-return
+    "PTH",  # flake8-use-pathlib
+    "ERA",  # eradicate
+    "PGH",  # pygrep-hooks
+
+    # String handling
+    "ISC",  # flake8-implicit-str-concat
+    "G",    # flake8-logging-format
+    "Q",    # flake8-quotes
+    "FLY",  # flynt
+
+    # Testing
+    "PT",   # flake8-pytest-style
+    "T20",  # flake8-print
+
+    # Type checking
+    "TCH",  # flake8-type-checking
+    "ANN",  # flake8-annotations
+
+    # Security
+    "S",    # flake8-bandit
+
+    # Documentation
+    "D",    # pydocstyle
+
+    # Performance
+    "PERF", # Perflint
+
+    # NumPy
+    "NPY",  # NumPy-specific rules
+
+    # Pylint
+    "PL",   # Pylint
+
+    # Ruff-specific
+    "RUF",  # Ruff-specific rules
+
+    # 2025 additions
+    "ARG",  # flake8-unused-arguments
+    "FBT",  # flake8-boolean-trap
+    "C90",  # mccabe complexity
+    "N",    # pep8-naming
+    "YTT",  # flake8-2020
+    "ASYNC",# flake8-async
+    "BLE",  # flake8-blind-except
+    "COM",  # flake8-commas
+    "DJ",   # flake8-django
+    "RUF100", # Ruff unused noqa
+]
+
+# Minimal ignores for clarity
+ignore = [
+    "E501",    # line too long (handled by ruff format)
+    "PLR0913", # too many arguments
+    "D100",    # missing docstring in public module
+    "D104",    # missing docstring in public package
+    "D107",    # missing docstring in __init__
+    "S101",    # use of assert (allowed in tests)
+    "ANN204",  # missing return type annotation for special method __init__
+    "COM812",  # trailing comma missing (conflicts with formatter)
+    "TRY003",  # long messages outside exception class
+    "EM101",   # exception must not use string literal
+    "RSE102",  # unnecessary parentheses on raised exception
+    "PLR2004", # magic value used in comparison
+    "DTZ005",  # timezone.utc is acceptable for explicit UTC usage
+    # "UP017",   # datetime.UTC is available in Python 3.13
+]
+
+# 2025: Extended unfixable rules
+unfixable = [
+    "F401",  # unused imports (require manual review)
+    "F841",  # unused variables (require manual review)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["T20", "S101", "D", "S105", "S106", "E402"] # tests: print, assert, no docstring, hardcoded passwords OK, module level imports after code
+
+[tool.ruff.lint.isort]
+known-first-party = ["backend"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"  # Googleスタイルのdocstring
+
+# Ruff formatter configuration (replaces Black)
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"
+docstring-code-format = true
+docstring-code-line-length = "dynamic"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/backend"]
+
+# === Hatch環境設定 - 2025年ベストプラクティス ===
+[tool.hatch.envs.default]
+# デフォルト開発環境
+dependencies = [
+  "ruff>=0.8.0",
+  "mypy>=1.15.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.11.0",
+  "pytest-xdist>=3.3.0",
+  "bandit>=1.7.5",
+]
+
+[tool.hatch.envs.default.scripts]
+# 基本的な開発コマンド
+lint = "ruff check . && ruff format --check . && mypy src"
+lint-fix = "ruff check --fix . && ruff format ."
+format = "ruff format ."
+format-check = "ruff format --check ."
+type-check = "mypy src"
+security = "bandit -r src/"
+test = "pytest --cov=backend --cov-report=html --cov-report=term-missing"
+test-fast = "pytest -x"
+test-verbose = "pytest -v --cov=backend --cov-report=html --cov-report=term-missing --cov-report=xml"
+all-checks = "hatch run lint && hatch run security && hatch run test"
+
+# === CI/CD専用環境 ===
+[tool.hatch.envs.ci]
+# CI環境（最小限の依存関係）
+dependencies = [
+  "ruff>=0.8.0",
+  "mypy>=1.15.0",
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-xdist>=3.3.0",
+  "bandit>=1.7.5",
+]
+
+[tool.hatch.envs.ci.scripts]
+# CI専用の高速チェック
+check-format = "ruff format --check --diff ."
+check-lint = "ruff check ."
+check-types = "mypy src"
+check-security = "bandit -r src/"
+test-ci = "pytest -v --cov=backend --cov-report=xml --cov-report=term-missing"
+# 並列実行対応
+test-parallel = "pytest -n auto --cov=backend --cov-report=xml --cov-report=term-missing"
+
+# === テスト専用環境 ===
+[tool.hatch.envs.test]
+dependencies = [
+  "pytest>=8.0.0",
+  "pytest-asyncio>=0.24.0",
+  "pytest-cov>=5.0.0",
+  "pytest-mock>=3.11.0",
+  "pytest-xdist>=3.3.0",
+  "pytest-benchmark>=4.0.0",
+]
+
+[[tool.hatch.envs.test.matrix]]
+python = ["3.12", "3.13"]
+
+[tool.hatch.envs.test.scripts]
+# マトリックステスト用
+run = "pytest -v"
+run-parallel = "pytest -n auto"
+run-cov = "pytest --cov=backend --cov-report=xml"
+run-bench = "pytest --benchmark-only"
+
+# === ビルド・デプロイ環境 ===
+[tool.hatch.envs.build]
+detached = true  # プロジェクト依存関係から独立
+dependencies = ["build", "twine", "wheel"]
+
+[tool.hatch.envs.build.scripts]
+# パッケージビルド・公開
+build = "python -m build"
+check = "twine check dist/*"
+upload-test = "twine upload --repository testpypi dist/*"
+upload = "twine upload dist/*"
+clean = "rm -rf dist/ build/ *.egg-info/"
+
+# === ドキュメント環境（オプション） ===
+[tool.hatch.envs.docs]
+detached = true
+dependencies = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
+
+[tool.hatch.envs.docs.scripts]
+build = "mkdocs build"
+serve = "mkdocs serve"
+deploy = "mkdocs gh-deploy"
+
+
+[tool.mypy]
+python_version = "3.13"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
+check_untyped_defs = true
+disallow_untyped_decorators = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true
+
+[tool.bandit]
+exclude_dirs = ["tests", "venv", ".venv"]
+skips = ["B101"]
+
+[tool.coverage.run]
+source = ["src"]
+omit = [
+    "*/tests/*",
+    "*/venv/*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+    "*/scripts/*",
+]
+
+[tool.coverage.report]
+fail_under = 80
+precision = 2
+show_missing = true
+skip_covered = false
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+
+[tool.coverage.html]
+directory = "htmlcov"
+
+[tool.coverage.xml]
+output = "coverage.xml"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_functions = ["test_*"]
+python_classes = ["Test*"]
+addopts = [
+    "--strict-markers",
+    "--cov=backend",
+    "--cov-report=term-missing",
+    "--cov-report=html",
+    "--cov-report=xml",
+    "-v",
+]
+markers = [
+    "unit: Unit tests",
+    "integration: Integration tests",
+    "e2e: End-to-end tests",
+    "slow: Slow running tests",
+    "security: Security related tests",
+]
