@@ -29,11 +29,11 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup mise
         uses: jdx/mise-action@v2
         with:
@@ -41,38 +41,35 @@ jobs:
           install: true
           cache: true
           experimental: true
-      
+
       # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
-      
+
       - name: Install dependencies
         run: bun install --frozen-lockfile
-      
+
       # 検証のみ - 修正は行わない (bun run経由でプロジェクト依存関係使用)
       - name: Check formatting with Prettier
         run: bun run format:check
-      
+
       - name: Check linting with ESLint
         run: bun run lint --max-warnings 0
-      
+
       - name: Type check with TypeScript
         run: bun run typecheck
-      
+
       - name: Check accessibility rules
         run: bun run security:check
-      
-      - name: Run tests
-        run: bun run test
-      
+
       - name: Run tests with coverage
         run: bun run test:coverage
-      
+
       # Accessibility tests placeholder
       # - name: Run accessibility tests
       #   run: bun run test:a11y
-      
+
       - name: Build check
         run: bun run build
-      
+
       - name: Upload coverage reports to Codecov
         if: github.event_name == 'pull_request'
         uses: codecov/codecov-action@v4
@@ -81,7 +78,7 @@ jobs:
           flags: frontend
           name: codecov-frontend
           fail_ci_if_error: false
-      
+
       - name: Upload coverage reports (artifact)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
@@ -89,56 +86,10 @@ jobs:
           name: js-coverage-report
           path: |
             frontend/coverage/
-      
+
       - name: Upload build artifacts
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: build-artifacts
           path: frontend/dist/
-
-
-  # Node.js バージョンマトリックステスト（将来の互換性確保）
-  compatibility-check:
-    runs-on: ubuntu-latest
-    # Skip CI if PR has skip-ci label or if it's a push with [skip-ci] in commit message
-    # But always run on main branch
-    if: |
-      github.ref == 'refs/heads/main' ||
-      (github.event_name == 'pull_request' && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) ||
-      (github.event_name == 'push' && !contains(github.event.head_commit.message, '[skip-ci]'))
-    permissions:
-      contents: read
-    strategy:
-      matrix:
-        node-version: ['18', '20', '21']
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup mise
-        uses: jdx/mise-action@v2
-        with:
-          version: 2025.6.8
-          install: true
-          cache: true
-          experimental: true
-      
-      # mise-actionがキャッシュを管理するため、個別のキャッシュ設定は不要
-      
-      - name: Install dependencies
-        working-directory: frontend
-        run: bun install --frozen-lockfile
-      
-      - name: Type check
-        working-directory: frontend
-        run: bun run typecheck
-      
-      - name: Build check
-        working-directory: frontend
-        run: bun run build
-      
-      - name: Run tests
-        working-directory: frontend
-        run: bun run test

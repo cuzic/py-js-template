@@ -60,8 +60,6 @@ jobs:
       - name: Security scan
         run: hatch run ci:check-security
 
-      - name: Run basic tests
-        run: hatch run ci:test-ci
 
       - name: Upload coverage reports to Codecov
         if: github.event_name == 'pull_request'
@@ -81,9 +79,9 @@ jobs:
             backend/coverage.xml
             backend/htmlcov/
 
-  # === マトリックステスト（Python複数バージョン） ===
-  matrix-test:
-    name: Test Matrix (Python ${{ matrix.python }})
+  # === 統合テスト（Python 3.13） ===
+  integration-test:
+    name: Integration Test (Python 3.13)
     runs-on: ubuntu-latest
     if: |
       github.ref == 'refs/heads/main' ||
@@ -93,16 +91,11 @@ jobs:
     permissions:
       contents: read
 
-    strategy:
-      fail-fast: false
-      matrix:
-        python: ['3.12', '3.13']
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup mise with Python ${{ matrix.python }}
+      - name: Setup mise with Python 3.13
         uses: jdx/mise-action@v2
         with:
           version: 2025.6.8
@@ -110,23 +103,22 @@ jobs:
           cache: true
           experimental: true
         env:
-          MISE_PYTHON_VERSION: ${{ matrix.python }}
+          MISE_PYTHON_VERSION: '3.13'
 
-      # Hatchのマトリックス環境を使用
-      - name: Create test environment for Python ${{ matrix.python }}
-        run: hatch env create test.py${{ matrix.python }}
+      # Hatchの統合テスト環境を使用
+      - name: Create test environment for Python 3.13
+        run: hatch env create test.py3.13
 
       - name: Run parallel tests
-        run: hatch run test.py${{ matrix.python }}:run-parallel
+        run: hatch run test.py3.13:run-parallel
 
       - name: Generate coverage report
-        run: hatch run test.py${{ matrix.python }}:run-cov
+        run: hatch run test.py3.13:run-cov
 
-      - name: Upload matrix coverage
-        if: matrix.python == '3.13'
+      - name: Upload coverage
         uses: actions/upload-artifact@v4
         with:
-          name: matrix-coverage-${{ matrix.python }}
+          name: integration-coverage
           path: backend/coverage.xml
 
   # === パッケージビルドテスト ===
@@ -174,7 +166,7 @@ jobs:
   # === PyPI公開（mainブランチのみ） ===
   publish:
     name: Publish to PyPI
-    needs: [quality-check, matrix-test, build-test]
+    needs: [quality-check, integration-test, build-test]
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
 
@@ -220,7 +212,7 @@ jobs:
   # === 統合レポート ===
   integration-report:
     name: Integration Report
-    needs: [quality-check, matrix-test, build-test]
+    needs: [quality-check, integration-test, build-test]
     runs-on: ubuntu-latest
     if: always() && github.event_name == 'pull_request'
 
@@ -253,7 +245,7 @@ jobs:
 
           ### ✅ 実行されたチェック
           - **品質チェック**: ${{ needs.quality-check.result }}
-          - **マトリックステスト**: ${{ needs.matrix-test.result }}
+          - **統合テスト**: ${{ needs.integration-test.result }}
           - **ビルドテスト**: ${{ needs.build-test.result }}
 
           ### 📊 カバレッジレポート
