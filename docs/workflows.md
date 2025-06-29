@@ -182,7 +182,7 @@ permissions:
 - name: Check formatting with Black
   run: uv run black --check --diff .
 
-- name: Check linting with Ruff  
+- name: Check linting with Ruff
   run: uv run ruff check .
 
 - name: Type check with MyPy
@@ -227,7 +227,7 @@ test-matrix:
   strategy:
     matrix:
       python-version: ['3.13', '3.12']
-  
+
   steps:
     # ... 複数Pythonバージョンでテスト実行
 ```
@@ -354,13 +354,13 @@ compatibility-check:
   strategy:
     matrix:
       node-version: ['18', '20', '21']
-  
+
   steps:
     - name: Setup Node.js ${{ matrix.node-version }}
       uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
-    
+
     - name: Build and test
       run: |
         bun run typecheck
@@ -372,250 +372,185 @@ compatibility-check:
 - **複数Node.jsバージョン**: 18, 20, 21で動作検証
 - **将来性保証**: 新しいNode.jsバージョンとの互換性確保
 
-## 🤖 AI Code Review ワークフロー（改良版）
+## 🤖 Claude Code ワークフロー
 
-### 📊 改良版の革新的改善
+### 📊 Claude Code統合の特徴
 
-| 項目 | 従来版 | 改良版 | 改善効果 |
-|------|--------|--------|----------|
-| **スクリプト管理** | YAML内埋め込み | **静的ファイル分離** | 保守性向上 |
-| **セキュリティ** | 基本チェック | **機密情報スキャン追加** | セキュリティ強化 |
-| **エラーハンドリング** | 基本的 | **包括的エラー処理** | 堅牢性向上 |
-| **権限** | `contents: write` | **`contents: read`** | 最小権限適用 |
-| **テスト可能性** | 不可 | **スクリプト単体テスト可能** | 品質保証 |
+| 項目 | 説明 | メリット |
+|------|------|----------|
+| **トリガー方式** | `@claude`メンション | 必要時のみ実行 |
+| **対応イベント** | Issue/PRコメント、レビュー | 柔軟な起動 |
+| **実行環境** | self-hostedランナー | セキュア環境 |
+| **認証方式** | OAuth（トークン管理） | APIキー不要 |
+| **機能範囲** | コード生成・修正・レビュー | 包括的支援 |
 
 ### ファイル構成
 
-- **ワークフロー**: `.github/workflows/review-improved.yml`
-- **レビュースクリプト**: `.github/scripts/review.py` (NEW!)
+- **ワークフロー**: `.github/workflows/claude.yml`
+- **必要なシークレット**:
+  - `CLAUDE_ACCESS_TOKEN`
+  - `CLAUDE_REFRESH_TOKEN`
+  - `CLAUDE_EXPIRES_AT`
 
-### 🔄 静的スクリプト分離のメリット
+### 🔄 使用方法
 
-#### ❌ 従来版の課題
+#### 1. Issueでの使用
+```markdown
+@claude このバグを修正してください
+
+エラーメッセージ:
+```
+TypeError: Cannot read property 'map' of undefined
+```
+
+該当ファイル: src/components/UserList.tsx
+```
+
+#### 2. PRコメントでの使用
+```markdown
+@claude このPRのコードをレビューして、改善点を提案してください。
+特にパフォーマンスとセキュリティの観点から確認をお願いします。
+```
+
+#### 3. PRレビューでの使用
+```markdown
+@claude この関数をより効率的に書き換えてください。
+現在のアルゴリズムはO(n²)ですが、O(n log n)にできるはずです。
+```
+
+### 📋 ワークフローの詳細
+
+#### トリガー条件
+
 ```yaml
-# 🚫 保守困難: YAML内に数百行のPythonコード
-- name: Run AI review
-  run: |
-    cat << 'EOF' > review.py
-    import os
-    import sys
-    # ... 200行以上のPythonコード ...
-    EOF
-    python review.py
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
 ```
 
-#### ✅ 改良版のアプローチ
-```yaml
-# ✨ シンプル: 静的スクリプトを直接実行
-- name: Run AI Code Review
-  env:
-    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-  run: |
-    python .github/scripts/review.py pr_diff.txt \
-      --pr-number "$PR_NUMBER" \
-      --repo-name "$REPO_NAME" \
-      --post-comment \
-      --output review_output.txt
-```
+**対応イベント:**
+- Issue作成時（タイトルまたは本文に`@claude`）
+- Issueコメント時（`@claude`メンション）
+- PRレビューコメント時（`@claude`メンション）
+- PRレビュー時（`@claude`メンション）
 
-#### 🎯 具体的な改善点
-
-1. **保守性向上**
-   - スクリプトの変更が容易
-   - YAMLファイルが見やすくなる
-   - バージョン管理の履歴が明確
-
-2. **テスト可能性**
-   - スクリプト単体でのテスト・デバッグが可能
-   - ローカル環境での実行確認
-   - CIとは独立した品質検証
-
-3. **再利用性**
-   - 他のワークフローからも利用可能
-   - ローカル開発でも使用可能
-   - 手動実行でのデバッグが容易
-
-### 📋 改良版の実行ステップ
-
-#### 改良版の主要機能
-
-##### 1. 静的スクリプト実行
-```python
-# .github/scripts/review.py の使用例
-python .github/scripts/review.py pr_diff.txt \
-  --pr-number "123" \
-  --repo-name "owner/repo" \
-  --post-comment \
-  --output review_output.txt
-```
-
-##### 2. セキュリティスキャン（NEW!）
-```yaml
-security-scan:
-  steps:
-    - name: Check for secrets in PR diff
-      run: |
-        # 機密情報パターンを検索
-        patterns=(
-          "password\s*[=:]\s*['\"][^'\"]*['\"]"
-          "api_key\s*[=:]\s*['\"][^'\"]*['\"]"
-          "sk-[a-zA-Z0-9]{32,}"  # API keys
-        )
-        # ... 検出ロジック
-```
-
-##### 3. エラーハンドリング強化
-```python
-# review.py内の堅牢なエラー処理
-try:
-    response = requests.post(url, json=payload, timeout=60)
-    response.raise_for_status()
-except requests.exceptions.Timeout:
-    return "⏰ Review Timeout: AI review service is experiencing delays"
-except requests.exceptions.RequestException as e:
-    return f"❌ Review Service Error: {str(e)}"
-```
-
-### 🧪 ローカルでのテスト方法
-
-```bash
-# 1. レビュースクリプトの単体テスト
-cd .github/scripts
-python review.py --help
-
-# 2. サンプル差分での動作確認
-git diff HEAD~1 > sample_diff.txt
-python review.py sample_diff.txt --output local_review.txt
-
-# 3. GitHub APIの動作確認（optional）
-export GITHUB_TOKEN="your_token"
-export GEMINI_API_KEY="your_key"
-python review.py sample_diff.txt --pr-number 123 --repo-name owner/repo
-```
-
-#### 実行ステップ詳細
+#### 実行ステップ
 
 ##### 1. 環境準備
 
 ```yaml
-- name: Checkout code
+- name: Checkout repository
   uses: actions/checkout@v4
   with:
-    fetch-depth: 0
+    fetch-depth: 1
 
-- name: Setup Python
-  uses: actions/setup-python@v5
+- name: claude debugging
+  id: debug_claude
+  run: |
+    echo "$PATH"
+    which claude
+    CLAUDE_PATH=$(command -v claude)
+    echo "Full path: $CLAUDE_PATH"
+    ls -l "$CLAUDE_PATH"
+    "$CLAUDE_PATH" --version
+```
+
+##### 2. Claude Code実行
+
+```yaml
+- name: Run Claude Code
+  id: claude
+  uses: cuzic/claude-code-action@main
   with:
-    python-version: '3.13'
-
-- name: Install dependencies
-  run: pip install requests
+    use_oauth: 'true'
+    claude_access_token: ${{ secrets.CLAUDE_ACCESS_TOKEN }}
+    claude_refresh_token: ${{ secrets.CLAUDE_REFRESH_TOKEN }}
+    claude_expires_at: ${{ secrets.CLAUDE_EXPIRES_AT }}
+    allowed_tools: "Bash(curl:*),Bash(wget:*),Bash(npm:*),Bash(git:*)"
 ```
 
-##### 2. PR差分取得
+### 🔐 セキュリティ設定
+
+#### 必要な権限
 
 ```yaml
-- name: Get PR diff
-  id: get-diff
-  env:
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  run: |
-    BASE_SHA="${{ github.event.pull_request.base.sha }}"
-    HEAD_SHA="${{ github.event.pull_request.head.sha }}"
-    
-    git diff $BASE_SHA..$HEAD_SHA > pr_diff.txt
-    
-    if [ ! -s pr_diff.txt ]; then
-      echo "No changes detected in the PR"
-      echo "has_changes=false" >> $GITHUB_OUTPUT
-    else
-      echo "has_changes=true" >> $GITHUB_OUTPUT
-      head -c 30000 pr_diff.txt > pr_diff_truncated.txt
-      mv pr_diff_truncated.txt pr_diff.txt
-    fi
+permissions:
+  contents: write      # コード変更のため
+  pull-requests: write # PR操作のため
+  issues: write        # Issue操作のため
+  id-token: write      # OIDC認証のため
 ```
 
-**実行内容:**
-- ベースブランチとHEADブランチの差分を取得
-- 30KB以下に制限（API制限対応）
-- 変更がない場合は後続スキップ
+#### 許可されたツール
 
-##### 3. AI レビュースクリプト作成
+現在の設定では以下のコマンドが許可されています：
+- `curl`: API呼び出しやダウンロード
+- `wget`: ファイルダウンロード
+- `npm`: パッケージ管理
+- `git`: バージョン管理操作
 
-```python
-# review.py (動的生成)
-def get_ai_review(diff_content):
-    api_key = os.environ.get('GEMINI_API_KEY')
-    if not api_key:
-        raise ValueError("GEMINI_API_KEY is not set")
-    
-    prompt = """あなたは、このプロジェクトで採用されている以下の技術スタックに精通したエキスパートレビューアです。
-- Python: uvによるパッケージ管理, Ruffによるリンティング, Blackによるフォーマット
-- JavaScript/TypeScript: Bunによるパッケージ管理, ESLint (Flat Config)によるリンティング, Prettierによるフォーマット, React
+### 🧪 ローカルでのテスト方法
 
-これらのルールに基づき、以下のコード変更（diff形式）をレビューしてください。
-特に、以下のチェックポイントに注目し、具体的で建設的なフィードバックを日本語で提供してください。
+```bash
+# 1. Claude CLIのインストール
+mise install claude@latest
 
---- チェックポイント ---
-1.  **Python (`backend/`):**
-    - `pyproject.toml` に定義されたRuffとBlackのルールに準拠していますか？
-    - 新しい依存関係は適切に追加されていますか？
-2.  **JavaScript/TypeScript (`frontend/`):**
-    - `eslint.config.js` (Flat Config) とPrettierのルールに準拠していますか？
-    - Bunの利用方法（`package.json`のスクリプトなど）に問題はありませんか？
-3.  **全体:**
-    - コードの品質、潜在的なバグ、パフォーマンス、セキュリティ、可読性の観点で改善点はありますか？
+# 2. 認証設定
+claude auth login
 
-もし問題がなければ、「指摘事項はありません。素晴らしい変更です！」と簡潔に述べてください。
-
---- コード差分 ---
-{}""".format(diff_content)
-    
-    # Gemini API呼び出し
-    url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key={api_key}"
-    # ... (API呼び出し処理)
+# 3. ローカル実行テスト
+claude "このプロジェクトの構造を説明してください"
 ```
 
-##### 4. AI レビュー実行
+### よくある使用例
 
-```yaml
-- name: Run AI review
-  if: steps.get-diff.outputs.has_changes == 'true'
-  env:
-    GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    GITHUB_REPOSITORY: ${{ github.repository }}
-    PR_NUMBER: ${{ github.event.pull_request.number }}
-  run: |
-    if [ -z "$GEMINI_API_KEY" ]; then
-      echo "⚠️ GEMINI_API_KEY is not set. Skipping AI review."
-      echo "Please set the GEMINI_API_KEY secret in your repository settings."
-      exit 0
-    fi
-    python review.py
+#### 1. バグ修正
+```markdown
+@claude
+
+ユーザーリストが表示されない問題を修正してください。
+コンソールに以下のエラーが出ています：
+
+```
+Cannot read properties of undefined (reading 'map')
 ```
 
-**実行内容:**
-- GEMINI_API_KEY の存在確認
-- 未設定の場合は適切なメッセージで終了
-- Gemini APIにレビューリクエスト送信
-- レビュー結果をPRコメントに投稿
+ファイル: frontend/src/components/UserList.tsx
+```
+
+#### 2. 機能追加
+```markdown
+@claude
+
+UserListコンポーネントに検索機能を追加してください。
+- リアルタイム検索
+- 大文字小文字を区別しない
+- 名前とメールアドレスで検索可能
+```
+
+#### 3. リファクタリング
+```markdown
+@claude
+
+このコードをより読みやすく、保守しやすい形にリファクタリングしてください。
+特に：
+- 関数の分割
+- 型の明確化
+- エラーハンドリングの改善
+```
 
 ### エラーハンドリング
 
-```python
-# API関連エラー
-try:
-    response = requests.post(url, json=payload, timeout=30)
-    response.raise_for_status()
-except requests.exceptions.Timeout:
-    return "⏱️ APIリクエストがタイムアウトしました。後ほど再試行してください。"
-except requests.exceptions.RequestException as e:
-    return f"❌ APIリクエストエラー: {str(e)}"
-except Exception as e:
-    return f"❌ 予期しないエラー: {str(e)}"
-```
+Claude Codeが実行できない場合の一般的な原因：
 
+1. **認証エラー**: トークンの期限切れ
+2. **権限不足**: 必要な権限が設定されていない
+3. **ランナー問題**: self-hostedランナーが利用不可
+4. **APIレート制限**: 使用制限に到達
 ## 🔧 ワークフロー設定のカスタマイズ
 
 ### パス指定の変更
@@ -626,7 +561,7 @@ paths:
   - 'backend/src/**'
   - 'backend/tests/**'
   - 'backend/pyproject.toml'
-  
+
 # 除外パス指定
 paths-ignore:
   - 'backend/docs/**'
@@ -681,7 +616,7 @@ strategy:
 
 # 以下のキャッシュが自動的に設定されます：
 # - mise ツール自体のキャッシュ
-# - Python/Node.js/Bunランタイムのキャッシュ  
+# - Python/Node.js/Bunランタイムのキャッシュ
 # - pipx でインストールされたツールのキャッシュ
 # - bun でインストールされたグローバルツール（mise経由、npm.bun=true）のキャッシュ
 ```
@@ -710,7 +645,7 @@ uv venv && uv pip install -e ".[dev]"
 
 # 2. CIと同じチェックを実行
 uv run black --check --diff .       # フォーマット確認
-uv run ruff check .                 # リンティング確認  
+uv run ruff check .                 # リンティング確認
 uv run mypy src                     # 型チェック
 uv run bandit -r src/               # セキュリティチェック
 uv run pytest -v                   # テスト実行
@@ -764,7 +699,7 @@ permissions:
 permissions:
   contents: read           # 読み取り専用
   pull-requests: read      # PR情報読み取り
-  
+
 # 注意: AIレビューでコメント投稿が必要な場合のみ
 permissions:
   pull-requests: write     # コメント投稿用
@@ -801,7 +736,7 @@ strategy:
     include:
       - python: '3.13'
         node: '20'
-      - python: '3.12'  
+      - python: '3.12'
         node: '21'
 
 # 条件付き実行
@@ -841,7 +776,7 @@ strategy:
 
 - [ ] 改良版ワークフローの動作確認
 - [ ] キャッシュ機能の有効性確認
-- [ ] 権限設定の適切性確認  
+- [ ] 権限設定の適切性確認
 - [ ] エラーハンドリングの動作確認
 - [ ] チーム全体への移行通知
 - [ ] 従来版ワークフローの削除
@@ -871,16 +806,16 @@ strategy:
 
 ### 改良版の主要な成果
 
-✅ **セキュリティ強化**: 最小権限の原則適用で攻撃面を大幅縮小  
-✅ **運用安定性**: 検証専用アプローチで予期しない競合を排除  
-✅ **開発効率**: キャッシュ導入で実行時間を30-60%短縮  
-✅ **保守性向上**: 静的スクリプト分離でメンテナンスが容易  
-✅ **品質向上**: アクセシビリティ・セキュリティチェック追加  
+✅ **セキュリティ強化**: 最小権限の原則適用で攻撃面を大幅縮小
+✅ **運用安定性**: 検証専用アプローチで予期しない競合を排除
+✅ **開発効率**: キャッシュ導入で実行時間を30-60%短縮
+✅ **保守性向上**: 静的スクリプト分離でメンテナンスが容易
+✅ **品質向上**: アクセシビリティ・セキュリティチェック追加
 
 ### 🚀 次のステップ
 
 1. **改良版ワークフローの導入**: 段階的移行計画に沿って実装
-2. **チーム教育**: 新しい開発フローの共有・トレーニング  
+2. **チーム教育**: 新しい開発フローの共有・トレーニング
 3. **監視・最適化**: 実行時間・成功率の継続的モニタリング
 4. **継続改善**: フィードバックを基にした更なる最適化
 

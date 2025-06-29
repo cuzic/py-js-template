@@ -101,10 +101,10 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
    # シェル設定ファイル（~/.bashrc、~/.zshrcなど）に追加
    echo 'eval "$(mise activate bash)"' >> ~/.bashrc  # bash用
    echo 'eval "$(mise activate zsh)"' >> ~/.zshrc    # zsh用
-   
+
    # またはPATHに直接shimを追加
    echo 'export PATH="$HOME/.local/share/mise/shims:$PATH"' >> ~/.bashrc
-   
+
    # シェル再起動または設定読み込み
    source ~/.bashrc  # または source ~/.zshrc
    ```
@@ -113,7 +113,7 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
    ```bash
    git clone <your-repo>
    cd <repo-name>
-   
+
    # 必要なツール全てをインストール（ランタイム + 開発ツール）
    mise install
    ```
@@ -123,7 +123,7 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
    # バックエンドセットアップ
    cd backend
    uv sync --all-extras
-   
+
    # フロントエンドセットアップ
    cd frontend
    bun install
@@ -134,7 +134,7 @@ PythonバックエンドとJavaScript/TypeScriptフロントエンドでフル�
 > - **Pythonツール**: Black、Ruff、MyPy、pytest、Bandit（pipx経由）
 > - **JS/TSツール**: TypeScript、ESLint、Prettier、Vite（mise経由bunでインストール）
 > - **その他ツール**: GitHub CLI、uvパッケージマネージャー
-> 
+>
 > **ツール管理ルール**:
 > - ✅ PATH設定なしで`mise exec -- <tool>`を使用
 > - ✅ グローバルツールは全てmiseでbunバックエンド管理
@@ -240,7 +240,7 @@ bun run test:watch        # ウォッチモード
 - Banditセキュリティスキャン
 - Pytestカバレッジレポート付き
 
-#### 📜 JavaScript CI (`js-ci-improved.yml`) 
+#### 📜 JavaScript CI (`js-ci-improved.yml`)
 - **ブランチ保護必須** - 失敗時マージブロック
 - ESLint基本ルール・Prettierフォーマット
 - TypeScript型チェック
@@ -262,10 +262,11 @@ bun run test:watch        # ウォッチモード
 - 品質トレンドレポート・アラート
 - **週次スケジュール実行**（日曜日午前9時）+ 手動実行
 
-### 🤖 AIコードレビュー (`review-improved.yml`)
-- Gemini AIによる自動コードレビュー
-- セキュリティパターン検出
-- 品質ワークフローから独立
+### 🤖 Claude Code統合 (`claude.yml`)
+- GitHub Issue/PRコメントで`@claude`メンションによる起動
+- Claude AIによる自動コード生成・修正・レビュー
+- self-hostedランナーでのセキュアな実行環境
+- OAuthベースの認証でAPIキー管理
 
 ### ⏭️ CIスキップ機能
 - **[skip-ci]タグ**: コミットメッセージに追加でpushイベントのCIスキップ
@@ -275,7 +276,7 @@ bun run test:watch        # ウォッチモード
   ```bash
   # ドキュメント更新時のCIスキップ
   git commit -m "docs: Fix typo in README [skip-ci]"
-  
+
   # ラベル使用によるPRのCIスキップ
   gh pr edit --add-label "skip-ci"
   ```
@@ -338,7 +339,7 @@ DevContainerは以下のサービスで拡張可能：
    ```bash
    # バックエンド
    cd backend && uv run ruff check . && uv run mypy src && uv run pytest
-   
+
    # フロントエンド
    cd frontend && bun run lint:check && bun run typecheck && bun test
    ```
