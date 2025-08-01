@@ -7,11 +7,11 @@ set -e
 
 echo "🚀 Starting DevContainer setup with mise (Dockerfileless)..."
 
-# Wait for mise to be fully installed by the devcontainer feature
+# Wait for mise to be fully installed
 sleep 2
 
-# Activate mise for this script
-eval "$(mise activate bash)"
+# Activate mise for this script (using full path)
+eval "$(~/.local/bin/mise activate bash)"
 
 # Verify mise installation
 echo "📋 Verifying mise installation..."
@@ -31,9 +31,13 @@ echo "Black: $(mise exec -- black --version)"
 echo "TypeScript: $(mise exec -- tsc --version)"
 echo "ESLint: $(mise exec -- eslint --version)"
 
-# Add mise activation to shell profiles
-echo 'eval "$(mise activate bash)"' >> ~/.bashrc
-echo 'eval "$(mise activate zsh)"' >> ~/.zshrc
+# Add mise activation to shell profiles (if not already present)
+if ! grep -q "mise activate bash" ~/.bashrc; then
+    echo 'eval "$(~/.local/bin/mise activate bash)"' >> ~/.bashrc
+fi
+if ! grep -q "mise activate zsh" ~/.zshrc; then
+    echo 'eval "$(~/.local/bin/mise activate zsh)"' >> ~/.zshrc
+fi
 
 # Ensure proper PATH for mise tools
 echo 'export PATH="$HOME/.local/share/mise/shims:$PATH"' >> ~/.bashrc

@@ -5,8 +5,16 @@
 
 echo "🔄 DevContainer post-start setup..."
 
-# Activate mise
-eval "$(mise activate bash)"
+# Activate mise (use full path initially)
+eval "$(~/.local/bin/mise activate bash)"
+
+# Run setup script on first start
+if [ ! -f ~/.devcontainer-setup-done ]; then
+    echo "🚀 Running initial setup..."
+    bash .devcontainer/setup.sh
+    touch ~/.devcontainer-setup-done
+    echo "✅ Initial setup completed!"
+fi
 
 # Show current tool versions
 echo "📋 Current tool versions:"

@@ -3,9 +3,6 @@
   "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
   "features": {
     "ghcr.io/devcontainers/features/common-utils:2": {},
-    "ghcr.io/jdx/mise/mise:1": {
-      "version": "latest"
-    },
     "ghcr.io/devcontainers/features/git:1": {},
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {}
@@ -118,7 +115,7 @@
   },
 
   // Commands to run after the container is created
-  "postCreateCommand": "chmod +x .devcontainer/*.sh && mise trust -- --non-interactive && bash .devcontainer/setup.sh",
+  "postCreateCommand": "sudo bash .devcontainer/init.sh",
 
   // Commands to run when starting the container
   "postStartCommand": "bash .devcontainer/post-start.sh",
